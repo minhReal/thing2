@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Demonology Ghost Guide — V1.10.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -136,7 +137,7 @@
         .ghost-header:hover { background: var(--surface2); }
         .ghost-num { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); width: 26px; flex-shrink: 0; }
         .ghost-name { font-size: 1.05rem; font-weight: 600; flex: 1; }
-        .toggle-icon { font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; }
+        .toggle-icon { font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; display: inline-block; }
         .ghost-body { padding: 14px 20px 18px 62px; border-top: 1px solid var(--border); }
         .ghost-body.closed { display: none; }
         .section { margin-bottom: 12px; }
@@ -270,9 +271,9 @@ ghosts.forEach(g => {
         <div class="ghost-header" onclick="toggleCard(this)">
             <span class="ghost-num">${g.num}</span>
             <span class="ghost-name">${g.name}</span>
-            <span class="toggle-icon" style="transform:rotate(180deg)">▼</span>
+            <span class="toggle-icon">▼</span>
         </div>
-        <div class="ghost-body">
+        <div class="ghost-body closed">
             <div class="section"><dt>Journal</dt><dd>${g.journal}</dd></div>
             <div class="section"><dt>Đặc Trưng</dt><dd>${g.feature}</dd></div>
             <div class="section"><dt>Mẹo Xác Định</dt><dd>${g.tips}</dd></div>
