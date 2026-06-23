@@ -5,140 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Demonology Ghost Guide — V1.10.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
             --bg: #0a0a0a; --surface: #111; --surface2: #181818;
             --border: #252525; --text: #e2e2e2; --muted: #888;
             --accent: #c8a97e; --highlight: #ff5555; --label: #7a9e7e;
-            --ai-border: #3a5a3a; --ai-bg: #0d150d;
         }
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px 80px; line-height: 1.6; }
 
-        /* HEADER */
         header { max-width: 800px; margin: 0 auto 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
         .header-text h1 { font-size: 2rem; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
         .header-text p { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
 
-        /* AI TRIGGER BUTTON */
-        .ai-trigger {
-            display: flex; align-items: center; gap: 8px;
-            background: #0f1f0f; border: 1px solid var(--ai-border);
-            color: var(--label); padding: 10px 16px; border-radius: 8px;
-            cursor: pointer; font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem; transition: background 0.15s, border-color 0.15s;
-            white-space: nowrap; flex-shrink: 0;
-        }
-        .ai-trigger:hover { background: #162616; border-color: #5a8a5a; }
-        .ai-trigger svg { flex-shrink: 0; }
-
-        /* AI MODAL OVERLAY */
-        .ai-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            z-index: 100; display: flex; align-items: flex-end; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.2s;
-        }
-        .ai-overlay.open { opacity: 1; pointer-events: all; }
-
-        /* AI PANEL */
-        .ai-panel {
-            width: 100%; max-width: 600px;
-            background: var(--ai-bg); border: 1px solid var(--ai-border);
-            border-bottom: none; border-radius: 14px 14px 0 0;
-            display: flex; flex-direction: column;
-            transform: translateY(100%); transition: transform 0.25s cubic-bezier(.4,0,.2,1);
-            max-height: 85vh;
-        }
-        .ai-overlay.open .ai-panel { transform: translateY(0); }
-
-        .ai-panel-header {
-            padding: 14px 18px 12px;
-            background: #0f1f0f; border-bottom: 1px solid var(--ai-border);
-            border-radius: 14px 14px 0 0;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--label); box-shadow: 0 0 5px var(--label); flex-shrink:0; }
-        .ai-panel-title { font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; color: var(--label); flex: 1; }
-        .ai-close {
-            background: none; border: none; color: var(--muted); cursor: pointer;
-            font-size: 1rem; line-height: 1; padding: 2px 4px; border-radius: 4px;
-            transition: color 0.12s;
-        }
-        .ai-close:hover { color: var(--text); }
-
-        /* CHAT */
-        .ai-chat {
-            flex: 1; overflow-y: auto; padding: 14px 16px;
-            display: flex; flex-direction: column; gap: 10px;
-            min-height: 160px;
-        }
-        .ai-chat::-webkit-scrollbar { width: 3px; }
-        .ai-chat::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-
-        .msg { display: flex; gap: 8px; align-items: flex-start; }
-        .msg.user { flex-direction: row-reverse; }
-        .msg-label { font-size: 0.62rem; font-family: 'JetBrains Mono', monospace; color: var(--muted); padding-top: 3px; white-space: nowrap; }
-        .msg-bubble { padding: 9px 13px; border-radius: 8px; font-size: 0.86rem; line-height: 1.55; max-width: 84%; }
-        .msg.ai .msg-bubble { background: #1a2a1a; border: 1px solid var(--ai-border); color: #cce8cc; }
-        .msg.user .msg-bubble { background: #1e1e1e; border: 1px solid #333; color: var(--text); }
-        .msg-bubble strong { color: var(--accent); }
-
-        /* HINTS — horizontal scroll */
-        .ai-hints-wrap {
-            border-top: 1px solid var(--ai-border);
-            overflow: hidden;
-            transition: max-height 0.2s, opacity 0.2s;
-            max-height: 60px; opacity: 1;
-        }
-        .ai-hints-wrap.hidden { max-height: 0; opacity: 0; pointer-events: none; }
-        .ai-hints {
-            display: flex; gap: 6px; padding: 8px 14px;
-            overflow-x: auto; white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-        .ai-hints::-webkit-scrollbar { display: none; }
-        .hint-chip {
-            display: inline-block; flex-shrink: 0;
-            font-size: 0.71rem; font-family: 'JetBrains Mono', monospace;
-            background: #151515; border: 1px solid #2a2a2a;
-            color: var(--muted); padding: 5px 11px; border-radius: 4px;
-            cursor: pointer; transition: border-color 0.12s, color 0.12s;
-            white-space: nowrap;
-        }
-        .hint-chip:hover { border-color: var(--label); color: var(--label); }
-
-        /* INPUT ROW */
-        .ai-input-row {
-            display: flex; gap: 8px; padding: 10px 14px 14px;
-            border-top: 1px solid var(--ai-border);
-        }
-        .ai-input {
-            flex: 1; background: #111; border: 1px solid #333; border-radius: 6px;
-            padding: 9px 13px; color: var(--text); font-family: 'Inter', sans-serif;
-            font-size: 0.86rem; outline: none; transition: border-color 0.15s;
-        }
-        .ai-input:focus { border-color: var(--label); }
-        .ai-input::placeholder { color: #555; }
-        .ai-input:disabled { opacity: 0.4; cursor: not-allowed; }
-        .ai-send {
-            background: #1a3a1a; border: 1px solid var(--ai-border);
-            border-radius: 6px; color: var(--label); padding: 9px 16px;
-            font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;
-            cursor: pointer; transition: background 0.15s; white-space: nowrap;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .ai-send:hover { background: #224422; }
-        .ai-send:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        /* TYPING */
-        .typing-dots span { display: inline-block; width: 4px; height: 4px; background: var(--label); border-radius: 50%; margin: 0 2px; animation: blink 1.2s infinite; }
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
-
-        /* GHOST LIST */
         .ghost-list { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
         .ghost-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
         .ghost-header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; cursor: pointer; transition: background 0.15s; user-select: none; }
@@ -157,11 +37,30 @@
         .note-block { max-width: 800px; margin: 32px auto 0; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); padding: 16px 20px; font-size: 0.875rem; color: #aaa; line-height: 1.75; }
         .note-block strong { display: block; margin-bottom: 6px; color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
         footer { max-width: 800px; margin: 40px auto 0; text-align: center; color: #444; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
-        @media (max-width: 600px) {
-            .ghost-body { padding-left: 20px; }
-            header { flex-direction: column; align-items: flex-start; gap: 14px; }
-            .header-text h1 { font-size: 1.5rem; }
+
+        /* AI Styles */
+        .ai-trigger {
+            display: flex; align-items: center; gap: 8px;
+            background: #0f1f0f; border: 1px solid #3a5a3a;
+            color: #7a9e7e; padding: 10px 16px; border-radius: 8px;
+            cursor: pointer; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
         }
+        .ai-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            z-index: 1000; display: none; align-items: flex-end; justify-content: center;
+        }
+        .ai-overlay.open { display: flex; }
+        .ai-panel {
+            width: 100%; max-width: 620px; background: #0a0f0a; border: 1px solid #3a5a3a;
+            border-radius: 12px 12px 0 0; max-height: 85vh; display: flex; flex-direction: column;
+        }
+        .ai-chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { display: flex; gap: 8px; }
+        .msg.user { flex-direction: row-reverse; }
+        .msg-bubble { padding: 10px 14px; border-radius: 8px; max-width: 80%; }
+        .msg.ai .msg-bubble { background: #1a2a1a; border: 1px solid #3a5a3a; }
+        .msg.user .msg-bubble { background: #1f1f1f; border: 1px solid #444; }
     </style>
 </head>
 <body>
@@ -171,108 +70,71 @@
         <h1>Demonology Ghost Guide</h1>
         <p>V1.10.0 — Summer Update · 25 Ghost Types</p>
     </div>
-    <button class="ai-trigger" onclick="openAI()">
-        <!-- brain/AI icon SVG -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a4 4 0 0 1 4 4c0 .34-.04.67-.1 1A4 4 0 0 1 20 11a4 4 0 0 1-2 3.46V16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-1.54A4 4 0 0 1 4 11a4 4 0 0 1 4.1-4C8.04 6.67 8 6.34 8 6a4 4 0 0 1 4-4z"/>
-            <line x1="12" y1="18" x2="12" y2="22"/>
-            <line x1="9" y1="22" x2="15" y2="22"/>
-            <circle cx="9" cy="11" r="1"/>
-            <circle cx="15" cy="11" r="1"/>
-        </svg>
-        Xác định ma
-    </button>
+    <button class="ai-trigger" onclick="openAI()">🤖 Xác định ma</button>
 </header>
-
-<!-- AI OVERLAY -->
-<div class="ai-overlay" id="aiOverlay" onclick="handleOverlayClick(event)">
-    <div class="ai-panel" id="aiPanel">
-        <div class="ai-panel-header">
-            <div class="ai-dot"></div>
-            <span class="ai-panel-title">AI Ghost Identifier</span>
-            <button class="ai-close" onclick="closeAI()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
-
-        <div class="ai-chat" id="aiChat">
-            <div class="msg ai">
-                <span class="msg-label">AI</span>
-                <div class="msg-bubble">Xin chào! Hãy mô tả những gì bạn quan sát được — tốc độ ghost, âm thanh, hành vi, thiết bị phản ứng... Tôi sẽ giúp bạn xác định loại ma.</div>
-            </div>
-        </div>
-
-        <div class="ai-hints-wrap" id="hintsWrap">
-            <div class="ai-hints">
-                <span class="hint-chip" onclick="fillHint(this)">ghost rất nhanh khi hunt</span>
-                <span class="hint-chip" onclick="fillHint(this)">không nghe tiếng bước chân</span>
-                <span class="hint-chip" onclick="fillHint(this)">nến chuyển màu xanh</span>
-                <span class="hint-chip" onclick="fillHint(this)">hunt liên tục không dừng</span>
-                <span class="hint-chip" onclick="fillHint(this)">đồ vật dịch chuyển có khói</span>
-                <span class="hint-chip" onclick="fillHint(this)">ghost xuyên tường, LIDAR không thấy</span>
-                <span class="hint-chip" onclick="fillHint(this)">energy tụt nhanh bất thường</span>
-                <span class="hint-chip" onclick="fillHint(this)">có tiếng wail lúc hunt</span>
-                <span class="hint-chip" onclick="fillHint(this)">Cross float và spin</span>
-                <span class="hint-chip" onclick="fillHint(this)">ghost chat nhiều kích hoạt hunt</span>
-            </div>
-        </div>
-
-        <div class="ai-input-row">
-            <input class="ai-input" id="aiInput" type="text" placeholder="Mô tả triệu chứng bạn thấy..." />
-            <button class="ai-send" id="aiSend" onclick="sendMessage()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-                Gửi
-            </button>
-        </div>
-    </div>
-</div>
 
 <div class="ghost-list" id="ghostList"></div>
 
 <div class="note-block">
     <strong>Lưu ý chung</strong>
-    Luôn mở Journal (phím J) để xem evidence &amp; traits.
-    <span style="color:var(--highlight);font-weight:600">Skinwalker</span> là ghost nguy hiểm nhất vì fake Ghost Orb + mimic abilities.
+    Luôn mở Journal (phím J). Skinwalker nguy hiểm nhất vì mimic. 
     Công cụ quan trọng: Salt, Cross, Holy Oil, Energy Drink, LIDAR.
 </div>
 
-<footer>Demonology Roblox · V1.10.0</footer>
+<footer>Demonology Roblox • Hướng dẫn chi tiết V1.10.0</footer>
+
+<!-- AI Modal -->
+<div class="ai-overlay" id="aiOverlay">
+    <div class="ai-panel">
+        <div style="padding:14px 20px; border-bottom:1px solid #3a5a3a; display:flex; justify-content:space-between; align-items:center; background:#0f1a0f;">
+            <strong>AI Ghost Identifier</strong>
+            <button onclick="closeAI()" style="background:none;border:none;color:#aaa;font-size:1.4rem;cursor:pointer;">×</button>
+        </div>
+        <div class="ai-chat" id="aiChat">
+            <div class="msg ai">
+                <div class="msg-bubble">Xin chào! Mô tả những gì bạn thấy (tốc độ, âm thanh, hành vi, thiết bị...) để tôi giúp xác định ghost.</div>
+            </div>
+        </div>
+        <div style="padding:12px; border-top:1px solid #3a5a3a;">
+            <input id="aiInput" type="text" placeholder="Ví dụ: ghost hunt liên tục, cross float..." 
+                   style="width:100%; padding:12px; background:#111; border:1px solid #444; border-radius:6px; color:white;" 
+                   onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()" style="margin-top:8px; width:100%; padding:10px; background:#3a5a3a; border:none; border-radius:6px; color:white; font-weight:600;">Gửi</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const ghosts = [
-    { num:"01", name:"Aswang", journal:"Một thực thể săn mồi cổ xưa, càng giết càng trở nên mạnh mẽ và hung hãn.", feature:"Tăng tốc <span class='highlight'>20%</span> mỗi kill (unique). Salt làm chậm đáng kể.", tips:"Theo dõi tốc độ ghost tăng dần sau mỗi lần chết. Dùng Photo Camera để kiểm tra.", counter:"Rải salt dày đặc ở hành lang và ghost room. Loop rộng, tránh bị kill liên tục.", mimic:"Skinwalker có thể mimic tăng tốc khi kill." },
-    { num:"02", name:"Banshee", journal:"Tiếng kêu thảm thiết của Banshee báo trước cái chết.", feature:"Phá nhiều cửa sổ/gương cùng lúc. Có tiếng kêu wail đặc biệt lúc hunt.", tips:"Nghe tiếng kêu wail để nhận biết sớm. Kiểm tra cửa sổ vỡ nhiều.", counter:"Tránh đứng gần kính và cửa sổ. Hide tốt khi nghe tiếng kêu.", mimic:"Skinwalker có thể mimic phá kính." },
-    { num:"03", name:"Demon", journal:"CẢNH BÁO CỰC KỲ NGUY HIỂM. DEMON HUNT RẤT THƯỜNG XUYÊN.", feature:"Hunt rất thường xuyên (threshold ~<span class='highlight'>85%</span> energy). Cross float và spin khi burn.", tips:"Cross float + spin là dấu hiệu chắc chắn. Hunt chain liên tục.", counter:"Mang nhiều Crucifix, đặt cách xa nhau. Chuẩn bị safe spot tốt.", mimic:"Skinwalker mimic được behavior Crucifix." },
-    { num:"04", name:"Dullahan", journal:"Kỵ sĩ không đầu, mang theo cái chết.", feature:"Headless trong ảnh chụp (Photo Camera). Tăng tốc khi có line-of-sight lâu.", tips:"Chụp ảnh ghost để thấy headless. Tránh nhìn trực tiếp lâu.", counter:"Loop thông minh, dùng vật cản. Chụp ảnh để confirm.", mimic:"Skinwalker có thể mimic headless trong ảnh." },
-    { num:"05", name:"Dybbuk", journal:"Linh hồn ác quỷ bị kẹt trong vật thể.", feature:"Bị stun sau khi chơi Music Box lần đầu. Ném xác người chết.", tips:"Music Box stun chỉ hiệu quả lần đầu. Xác chết bị di chuyển.", counter:"Dùng Music Box cẩn thận. Tránh khu vực có xác chết.", mimic:"Skinwalker mimic Music Box stun." },
-    { num:"06", name:"Entity", journal:"Thực thể lạ lùng, có khả năng dịch chuyển tức thời.", feature:"Teleport giữa các phòng &amp; vật thể (có khói màu).", tips:"Đồ đạc dịch chuyển đột ngột kèm khói. LIDAR quét thấy vị trí teleport.", counter:"Đặt salt ở hành lang. Dùng LIDAR theo dõi.", mimic:"Skinwalker mimic teleport." },
-    { num:"07", name:"Ghoul", journal:"Thây ma thèm khát sự chú ý.", feature:"Chat quá nhiều → hunt ngay. Không tương tác với thiết bị điện.", tips:"Ghost không tắt đèn hoặc tương tác điện. Chat nhiều sẽ gây hunt.", counter:"Giữ im lặng trong chat. Dễ identify.", mimic:"Skinwalker mimic không tương tác điện." },
-    { num:"08", name:"Keres", journal:"Nữ thần chết chóc, chọn nạn nhân yếu nhất.", feature:"Giảm tốc mỗi kill. Target người có energy thấp nhất trong team.", tips:"Target người energy thấp. Tốc độ giảm dần theo số kill.", counter:"Giữ energy cao cho toàn team. Dùng Energy Drink thường xuyên.", mimic:"Skinwalker mimic target energy thấp." },
-    { num:"09", name:"Leviathan", journal:"Quái vật biển sâu kiểm soát công nghệ.", feature:"Flicker equipment thường xuyên. Tắt đèn một cách thụ động.", tips:"Thiết bị nhấp nháy liên tục, đèn tắt mà không có ghost rõ ràng.", counter:"Theo dõi đèn &amp; equipment. Mang đèn pin dự phòng.", mimic:"Skinwalker mimic flicker equipment." },
-    { num:"10", name:"Nightmare", journal:"Ác mộng sống động, thao túng giác quan.", feature:"Gây ảo giác âm thanh. Sợ phòng sáng.", tips:"Âm thanh lạ không phải từ ghost thật. Hoạt động yếu ở phòng sáng.", counter:"Giữ nhiều đèn sáng. Cẩn thận với sound cues.", mimic:"Skinwalker mimic ảo giác âm thanh." },
-    { num:"11", name:"Oni", journal:"Quỷ dữ mạnh mẽ, thích hiện hình.", feature:"Siêu nhanh trong hunt. Hay gây ghost event và hiện hình thường xuyên.", tips:"Hiện hình rất thường xuyên. Tốc độ hunt rất cao.", counter:"Tránh loop trực tiếp. Dùng Cross/Holy Oil.", mimic:"Skinwalker mimic hiện hình &amp; tốc độ cao." },
-    { num:"12", name:"Phantom", journal:"Bóng ma mờ ảo, khó nắm bắt.", feature:"Blink chậm hơn (invisible lâu hơn), di chuyển nhanh khi invisible.", tips:"Pattern blink dài hơn thông thường. Dùng heartbeat để loop.", counter:"Dựa vào heartbeat để loop an toàn.", mimic:"Skinwalker mimic blink pattern." },
-    { num:"13", name:"Ravager", journal:"Kẻ tàn phá, ném mọi thứ trong tầm tay.", feature:"Ném nhiều vật cùng lúc. Abilities để lại EMF 5. Tạo vortex.", tips:"EMF 5 liên tục. Vortex xuất hiện gần ghost room.", counter:"Tránh khu vực nhiều vật thể. Quan sát EMF.", mimic:"Skinwalker mimic ném vật &amp; EMF 5." },
-    { num:"14", name:"Revenant", journal:"Linh hồn báo thù, dừng lại sau một lần giết.", feature:"Cooldown hunt thấp. Dừng hunt sau 1 kill.", tips:"Hunt liên tục nhưng dừng lại sau 1 kill. Cooldown rất ngắn.", counter:"Hy sinh 1 người để cứu cả team nếu cần thiết.", mimic:"Skinwalker mimic dừng sau kill." },
-    { num:"15", name:"Shadow", journal:"Bóng tối sống động, ghét ánh sáng.", feature:"Nhiệt độ giảm rất ít. Ít hoạt động ở phòng sáng.", tips:"Hoạt động yếu khi phòng sáng. Nhiệt độ không giảm mạnh.", counter:"Giữ đèn sáng tối đa trong toàn bộ map.", mimic:"Skinwalker mimic sợ ánh sáng." },
-    { num:"16", name:"Siren", journal:"Nữ quỷ biển ca hát dụ dỗ.", feature:"Model &amp; giọng nữ. Làm chậm người chơi khi nhìn (LOS). Humming trong Spirit Box.", tips:"Nghe humming trong Spirit Box. Làm chậm khi nhìn trực tiếp.", counter:"Tránh nhìn trực tiếp vào ghost. Nghe Spirit Box để confirm.", mimic:"Skinwalker mimic giọng nữ." },
-    { num:"17", name:"Skinwalker", journal:"Kẻ giả mạo nguy hiểm nhất, sao chép mọi thứ.", feature:"Fake Ghost Orb. Mimic abilities của ghost khác trong game.", tips:"Kiểm tra nhiều evidence khác nhau. Fake Orb không phải Orb thật.", counter:"Kiểm tra evidence thật kỹ. Khó identify nhất trong game.", mimic:"Mimic tất cả ghost khác." },
-    { num:"18", name:"Specter", journal:"Linh hồn bị kẹt mãi mãi trong một khu vực.", feature:"Ném vật thể thường xuyên. Chỉ ở ghost room (trừ khi hunt).", tips:"Hoạt động tập trung ở 1 phòng duy nhất.", counter:"Tập trung kiểm tra ghost room chính.", mimic:"Skinwalker mimic ở 1 phòng." },
-    { num:"19", name:"Spirit", journal:"Linh hồn cơ bản nhưng vẫn nguy hiểm.", feature:"Biến lửa nến thành màu xanh (giảm hiệu quả nến).", tips:"Nến cháy màu xanh là dấu hiệu rõ ràng nhất của Spirit.", counter:"Chú ý màu lửa nến trong ghost room.", mimic:"Skinwalker mimic nến xanh." },
-    { num:"20", name:"Umbra", journal:"Bóng tối im lặng tuyệt đối.", feature:"Không có tiếng bước chân. Chậm hơn ở phòng sáng.", tips:"Hoàn toàn không nghe footsteps. Hoạt động yếu khi sáng.", counter:"Giữ phòng sáng để làm chậm ghost.", mimic:"Skinwalker mimic không có footsteps." },
-    { num:"21", name:"Vesper", journal:"Quái vật dựa hoàn toàn vào âm thanh để săn mồi.", feature:"Dựa hoàn toàn vào âm thanh. Nghe được xuyên tường.", tips:"Rất nhạy cảm với tiếng động. Có thể nghe thấy từ rất xa.", counter:"Di chuyển thật im lặng, crouch liên tục.", mimic:"Skinwalker mimic nhạy âm thanh." },
-    { num:"22", name:"Vex", journal:"Thực thể xuyên không gian, vô hình với thiết bị.", feature:"Không hiện trong LIDAR. Đi xuyên tường tự do.", tips:"Hoàn toàn không thấy trên LIDAR. Có thể xuất hiện xuyên tường.", counter:"Không tin tưởng LIDAR. Dùng salt + loop để đối phó.", mimic:"Skinwalker mimic xuyên tường." },
-    { num:"23", name:"Wendigo", journal:"Quái vật tuyết đói khát năng lượng sống.", feature:"Ít hunt gần lửa. Tăng tốc khi average energy của team thấp.", tips:"Tránh lửa thì hunt nhiều hơn. Energy thấp = ghost nhanh hơn.", counter:"Giữ energy cao + dùng Candles/Lantern gần ghost room.", mimic:"Skinwalker mimic sợ lửa." },
-    { num:"24", name:"The Wisp", journal:"Ánh sáng ma quái, kiểm soát ngọn lửa.", feature:"Xuyên Holy Oil/fire. Chỉ hunt khi player ở favorite room. Có thể tự thắp nến.", tips:"Hunt chỉ xảy ra ở favorite room. Tự thắp nến là dấu hiệu đặc trưng.", counter:"Tránh favorite room khi nghi ngờ ghost sắp hunt.", mimic:"Skinwalker mimic xuyên Holy Oil." },
-    { num:"25", name:"Wraith", journal:"Linh hồn hút cạn năng lượng sống của nạn nhân.", feature:"Giảm energy nhanh (0.2–0.4%/giây). Không chạm salt.", tips:"Energy tụt nhanh dù ghost không hunt. Salt hoàn toàn không hiệu quả.", counter:"Uống Energy Drink thường xuyên. Không đặt salt để bẫy.", mimic:"Skinwalker mimic giảm energy." }
+    { num:"01", name:"Aswang", journal:"Một thực thể săn mồi cổ xưa, càng giết càng trở nên mạnh mẽ.", feature:"Tăng tốc <span class='highlight'>20%</span> mỗi kill. Salt làm chậm.", tips:"Tốc độ tăng dần sau kill.", counter:"Rải salt dày.", mimic:"Tăng tốc khi kill." },
+    { num:"02", name:"Banshee", journal:"Tiếng kêu thảm thiết báo trước cái chết.", feature:"Phá nhiều kính + tiếng wail.", tips:"Nghe tiếng kêu wail.", counter:"Tránh kính.", mimic:"Phá kính." },
+    { num:"03", name:"Demon", journal:"CẢNH BÁO: DEMON HUNT RẤT THƯỜNG.", feature:"Hunt threshold ~85%. Cross float & spin.", tips:"Cross float + spin.", counter:"Mang nhiều Cross.", mimic:"Crucifix behavior." },
+    { num:"04", name:"Dullahan", journal:"Kỵ sĩ không đầu.", feature:"Headless trong ảnh. Tăng tốc khi LOS.", tips:"Chụp ảnh headless.", counter:"Tránh nhìn lâu.", mimic:"Headless ảnh." },
+    { num:"05", name:"Dybbuk", journal:"Linh hồn bị kẹt trong vật.", feature:"Stun Music Box lần đầu. Ném xác.", tips:"Music Box stun.", counter:"Cẩn thận Music Box.", mimic:"Music Box stun." },
+    { num:"06", name:"Entity", journal:"Thực thể dịch chuyển tức thời.", feature:"Teleport + khói.", tips:"Đồ dịch chuyển có khói.", counter:"Salt hành lang.", mimic:"Teleport." },
+    { num:"07", name:"Ghoul", journal:"Thây ma thèm chú ý.", feature:"Chat nhiều = hunt. Không tương tác điện.", tips:"Không tắt đèn.", counter:"Im lặng chat.", mimic:"Không tương tác điện." },
+    { num:"08", name:"Keres", journal:"Chọn nạn nhân yếu nhất.", feature:"Giảm tốc mỗi kill. Target energy thấp.", tips:"Energy thấp bị target.", counter:"Giữ energy cao.", mimic:"Target energy thấp." },
+    { num:"09", name:"Leviathan", journal:"Kiểm soát công nghệ.", feature:"Flicker equipment + tắt đèn.", tips:"Thiết bị nhấp nháy.", counter:"Theo dõi đèn.", mimic:"Flicker." },
+    { num:"10", name:"Nightmare", journal:"Ác mộng thao túng giác quan.", feature:"Ảo giác âm thanh. Sợ sáng.", tips:"Âm thanh lạ.", counter:"Giữ sáng.", mimic:"Ảo giác âm." },
+    { num:"11", name:"Oni", journal:"Quỷ dữ mạnh mẽ.", feature:"Siêu nhanh + hay hiện hình.", tips:"Hiện hình thường.", counter:"Dùng Cross.", mimic:"Tốc độ cao." },
+    { num:"12", name:"Phantom", journal:"Bóng ma mờ ảo.", feature:"Blink chậm, nhanh khi invisible.", tips:"Blink pattern dài.", counter:"Dùng heartbeat.", mimic:"Blink pattern." },
+    { num:"13", name:"Ravager", journal:"Kẻ tàn phá.", feature:"Ném nhiều vật + EMF 5 + vortex.", tips:"EMF 5 & vortex.", counter:"Tránh đồ vật.", mimic:"Ném vật." },
+    { num:"14", name:"Revenant", journal:"Linh hồn báo thù.", feature:"Cooldown thấp. Dừng sau 1 kill.", tips:"Dừng sau kill.", counter:"Hy sinh nếu cần.", mimic:"Dừng sau kill." },
+    { num:"15", name:"Shadow", journal:"Ghét ánh sáng.", feature:"Nhiệt độ giảm ít. Ít hoạt động sáng.", tips:"Phòng sáng = yếu.", counter:"Giữ sáng.", mimic:"Sợ sáng." },
+    { num:"16", name:"Siren", journal:"Nữ quỷ ca hát.", feature:"Làm chậm LOS + humming Spirit Box.", tips:"Humming Spirit Box.", counter:"Tránh nhìn.", mimic:"Giọng nữ." },
+    { num:"17", name:"Skinwalker", journal:"Kẻ giả mạo nguy hiểm nhất.", feature:"Fake Orb + mimic mọi ghost.", tips:"Evidence mâu thuẫn.", counter:"Kiểm tra kỹ.", mimic:"Mimic tất cả." },
+    { num:"18", name:"Specter", journal:"Bị kẹt trong một khu.", feature:"Chỉ ở ghost room (trừ hunt).", tips:"Hoạt động 1 phòng.", counter:"Tập trung 1 phòng.", mimic:"Ở 1 phòng." },
+    { num:"19", name:"Spirit", journal:"Linh hồn cơ bản.", feature:"Nến chuyển màu xanh.", tips:"Nến xanh.", counter:"Chú ý màu nến.", mimic:"Nến xanh." },
+    { num:"20", name:"Umbra", journal:"Bóng tối im lặng.", feature:"Không footsteps. Chậm khi sáng.", tips:"Không nghe footsteps.", counter:"Giữ sáng.", mimic:"Không footsteps." },
+    { num:"21", name:"Vesper", journal:"Săn bằng âm thanh.", feature:"Nghe xuyên tường.", tips:"Nhạy tiếng động.", counter:"Crouch im lặng.", mimic:"Nhạy âm thanh." },
+    { num:"22", name:"Vex", journal:"Xuyên không gian.", feature:"Không hiện LIDAR + xuyên tường.", tips:"LIDAR không thấy.", counter:"Dùng salt.", mimic:"Xuyên tường." },
+    { num:"23", name:"Wendigo", journal:"Quái vật đói năng lượng.", feature:"Ít hunt gần lửa. Tăng tốc khi energy thấp.", tips:"Energy thấp = nhanh.", counter:"Giữ energy + lửa.", mimic:"Sợ lửa." },
+    { num:"24", name:"The Wisp", journal:"Ánh sáng ma quái.", feature:"Xuyên Holy Oil. Hunt chỉ ở favorite room.", tips:"Tự thắp nến.", counter:"Tránh favorite room.", mimic:"Xuyên Holy Oil." },
+    { num:"25", name:"Wraith", journal:"Hút năng lượng sống.", feature:"Energy tụt nhanh. Không chạm salt.", tips:"Energy tụt dù không hunt.", counter:"Uống Energy Drink.", mimic:"Giảm energy." }
 ];
 
-// Ghost list render
 const list = document.getElementById('ghostList');
+
 ghosts.forEach(g => {
     const card = document.createElement('div');
     card.className = 'ghost-card';
@@ -282,13 +144,14 @@ ghosts.forEach(g => {
             <span class="ghost-name">${g.name}</span>
             <span class="toggle-icon" style="transform:rotate(180deg)">▼</span>
         </div>
-        <div class="ghost-body">
+        <div class="ghost-body closed">
             <div class="section"><dt>Journal</dt><dd>${g.journal}</dd></div>
             <div class="section"><dt>Đặc Trưng</dt><dd>${g.feature}</dd></div>
             <div class="section"><dt>Mẹo Xác Định</dt><dd>${g.tips}</dd></div>
             <div class="section"><dt>Cách Đối Phó</dt><dd>${g.counter}</dd></div>
             <div class="section"><dt>Skinwalker Mimic</dt><dd>${g.mimic}</dd></div>
-        </div>`;
+        </div>
+    `;
     list.appendChild(card);
 });
 
@@ -299,117 +162,45 @@ function toggleCard(header) {
     icon.style.transform = isClosed ? '' : 'rotate(180deg)';
 }
 
-// AI modal
+// Simple Local AI
 function openAI() {
     document.getElementById('aiOverlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => document.getElementById('aiInput').focus(), 300);
-}
-function closeAI() {
-    document.getElementById('aiOverlay').classList.remove('open');
-    document.body.style.overflow = '';
-}
-function handleOverlayClick(e) {
-    if (e.target === document.getElementById('aiOverlay')) closeAI();
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAI(); });
-
-function fillHint(el) {
-    document.getElementById('aiInput').value = el.textContent;
     document.getElementById('aiInput').focus();
 }
 
-// AI chat
-const ghostDataForAI = ghosts.map(g => ({
-    name: g.name,
-    feature: g.feature.replace(/<[^>]+>/g,''),
-    tips: g.tips,
-    counter: g.counter
-}));
-
-const SYSTEM_PROMPT = `Bạn là AI chuyên gia về game Demonology Roblox phiên bản V1.10.0. Nhiệm vụ của bạn là giúp người chơi xác định loại ma dựa trên mô tả triệu chứng quan sát được.
-
-Đây là toàn bộ 25 loại ma trong game:
-${JSON.stringify(ghostDataForAI, null, 2)}
-
-Quy tắc trả lời:
-- Phân tích các triệu chứng người dùng mô tả
-- Đưa ra 1-3 loại ma có khả năng cao nhất, xếp theo thứ tự ưu tiên
-- Giải thích ngắn gọn tại sao mỗi loại phù hợp
-- Gợi ý thêm cách xác nhận (evidence cần kiểm tra thêm)
-- Nhắc đến Skinwalker nếu triệu chứng không rõ ràng
-- Trả lời bằng tiếng Việt, ngắn gọn và thực dụng
-- Không dùng markdown headers (##), chỉ text thường và xuống dòng`;
-
-let conversationHistory = [];
-const chatEl = document.getElementById('aiChat');
-const inputEl = document.getElementById('aiInput');
-const sendBtn = document.getElementById('aiSend');
-const hintsWrap = document.getElementById('hintsWrap');
-
-inputEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
-
-function appendMsg(role, html) {
-    const div = document.createElement('div');
-    div.className = `msg ${role}`;
-    div.innerHTML = `<span class="msg-label">${role === 'ai' ? 'AI' : 'Bạn'}</span><div class="msg-bubble">${html}</div>`;
-    chatEl.appendChild(div);
-    chatEl.scrollTop = chatEl.scrollHeight;
+function closeAI() {
+    document.getElementById('aiOverlay').classList.remove('open');
 }
 
-function showTyping() {
-    const div = document.createElement('div');
-    div.className = 'msg ai'; div.id = 'typingIndicator';
-    div.innerHTML = `<span class="msg-label">AI</span><div class="msg-bubble"><span class="typing-dots"><span></span><span></span><span></span></span></div>`;
-    chatEl.appendChild(div);
-    chatEl.scrollTop = chatEl.scrollHeight;
-}
-function removeTyping() { const el = document.getElementById('typingIndicator'); if (el) el.remove(); }
+function sendMessage() {
+    const input = document.getElementById('aiInput');
+    const text = input.value.trim().toLowerCase();
+    if (!text) return;
 
-function setLoading(on) {
-    sendBtn.disabled = on;
-    inputEl.disabled = on;
-    // ẩn hints khi đang load
-    if (on) {
-        hintsWrap.classList.add('hidden');
-    } else {
-        hintsWrap.classList.remove('hidden');
+    const chat = document.getElementById('aiChat');
+    chat.innerHTML += `<div class="msg user"><div class="msg-bubble">${input.value}</div></div>`;
+
+    let response = "Tôi không chắc lắm. Hãy mô tả thêm chi tiết (tốc độ, âm thanh, thiết bị, hành vi...).";
+
+    if (text.includes("hunt") && text.includes("liên tục") || text.includes("thường xuyên")) {
+        response = "Khả năng cao là <strong>Demon</strong>. Check Cross float & spin.";
+    } else if (text.includes("cross") && (text.includes("float") || text.includes("spin"))) {
+        response = "Chắc chắn là <strong>Demon</strong>!";
+    } else if (text.includes("nến") && text.includes("xanh")) {
+        response = "Là <strong>Spirit</strong>.";
+    } else if (text.includes("lidar") && text.includes("không")) {
+        response = "Có thể là <strong>Vex</strong>.";
+    } else if (text.includes("footstep") || text.includes("bước chân") && text.includes("không")) {
+        response = "Có thể là <strong>Umbra</strong> hoặc <strong>Wraith</strong>.";
+    } else if (text.includes("energy") && text.includes("tụt") || text.includes("giảm")) {
+        response = "Khả năng cao <strong>Wraith</strong> hoặc <strong>Wendigo</strong>.";
+    } else if (text.includes("mimic") || text.includes("fake orb")) {
+        response = "<strong>Skinwalker</strong> - Kiểm tra evidence kỹ.";
     }
-}
 
-async function sendMessage() {
-    const text = inputEl.value.trim();
-    if (!text || sendBtn.disabled) return;
-    inputEl.value = '';
-    setLoading(true);
-    appendMsg('user', text);
-    conversationHistory.push({ role: 'user', content: text });
-    showTyping();
-    try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-6',
-                max_tokens: 1000,
-                system: SYSTEM_PROMPT,
-                messages: conversationHistory
-            })
-        });
-        const data = await res.json();
-        const reply = data.content?.[0]?.text || 'Không nhận được phản hồi.';
-        conversationHistory.push({ role: 'assistant', content: reply });
-        removeTyping();
-        const formatted = reply.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        appendMsg('ai', formatted);
-    } catch (err) {
-        removeTyping();
-        appendMsg('ai', 'Lỗi kết nối. Vui lòng thử lại.');
-    }
-    setLoading(false);
-    inputEl.focus();
+    chat.innerHTML += `<div class="msg ai"><div class="msg-bubble">${response}<br><small>Hãy mô tả thêm để tôi chính xác hơn.</small></div></div>`;
+    chat.scrollTop = chat.scrollHeight;
+    input.value = '';
 }
 </script>
 </body>
