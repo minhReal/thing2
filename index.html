@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonology Ghost Guide — V1.10.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #181818;
+            --border: #252525;
+            --text: #e2e2e2;
+            --muted: #888;
+            --accent: #c8a97e;
+            --highlight: #ff5555;
+            --label: #7a9e7e;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px 80px;
+            line-height: 1.6;
+        }
+
+        header {
+            max-width: 800px;
+            margin: 0 auto 40px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .ghost-list {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ghost-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .ghost-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .ghost-header:hover {
+            background: var(--surface2);
+        }
+
+        .ghost-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--muted);
+            width: 28px;
+        }
+
+        .ghost-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .toggle-icon {
+            font-size: 1.1rem;
+            transition: transform 0.25s ease;
+        }
+
+        .ghost-body {
+            padding: 0 20px 20px 64px;
+            display: none;
+            border-top: 1px solid var(--border);
+        }
+
+        .ghost-body.open {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 16px;
+        }
+
+        .section dt {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--label);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 4px;
+        }
+
+        .section dd {
+            color: #ddd;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .section dd::before {
+            content: "•";
+            color: var(--accent);
+            position: absolute;
+            left: 0;
+        }
+
+        .highlight {
+            color: var(--highlight);
+            font-weight: 600;
+        }
+
+        .note-block {
+            max-width: 800px;
+            margin: 40px auto 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            padding: 18px 22px;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            max-width: 800px;
+            margin: 50px auto 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @media (max-width: 600px) {
+            .ghost-body { padding-left: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>👻 Demonology Ghost Guide</h1>
+    <p>V1.10.0 — Summer Update • 25 Ghost Types</p>
+</header>
+
+<div class="ghost-list" id="ghostList"></div>
+
+<div class="note-block">
+    <strong>Lưu Ý Quan Trọng</strong>
+    • Luôn mở <span class="highlight">Journal (phím J)</span> để xem evidence &amp; traits.<br>
+    • <span class="highlight">Skinwalker</span> là ghost nguy hiểm nhất vì fake Ghost Orb + mimic abilities.<br>
+    • Giữ energy cao, dùng Salt, Cross, Holy Oil, Energy Drink thường xuyên.
+</div>
+
+<footer>Made for Demonology Roblox • Cập nhật V1.10.0</footer>
+
+<script>
+const ghosts = [
+    {
+        num: "01",
+        name: "Aswang",
+        journal: "Một thực thể săn mồi cổ xưa, càng giết càng trở nên mạnh mẽ và hung hãn.",
+        feature: "Tăng tốc <span class='highlight'>20%</span> mỗi kill unique. Salt làm chậm đáng kể.",
+        tips: "Theo dõi tốc độ ghost tăng dần sau mỗi lần chết. Dùng Photo Camera để kiểm tra.",
+        counter: "Rải salt dày đặc ở hành lang và ghost room. Loop rộng, tránh kill liên tục.",
+        mimic: "Skinwalker có thể mimic tăng tốc khi kill."
+    },
+    {
+        num: "02",
+        name: "Banshee",
+        journal: "Tiếng kêu thảm thiết của Banshee báo trước cái chết.",
+        feature: "Phá nhiều cửa sổ/gương cùng lúc. Có tiếng kêu wail đặc biệt lúc hunt.",
+        tips: "Nghe tiếng kêu wail để nhận biết sớm. Kiểm tra cửa sổ vỡ nhiều.",
+        counter: "Tránh đứng gần kính và cửa sổ. Hide tốt khi nghe tiếng kêu.",
+        mimic: "Skinwalker có thể mimic phá kính."
+    },
+    {
+        num: "03",
+        name: "Demon",
+        journal: "USE EXTREME CAUTION. DEMONS HUNT FREQUENTLY.",
+        feature: "Hunt rất thường xuyên (threshold ~<span class='highlight'>85%</span>% energy). Cross mạnh hơn và float/spin khi burn.",
+        tips: "Cross float + spin là dấu hiệu chắc chắn. Hunt chain liên tục.",
+        counter: "Mang nhiều Crucifix, đặt cách xa. Chuẩn bị safe spot tốt.",
+        mimic: "Skinwalker mimic được behavior Crucifix."
+    },
+    {
+        num: "04",
+        name: "Dullahan",
+        journal: "Kỵ sĩ không đầu, mang theo cái chết.",
+        feature: "Headless trong ảnh (Photo Camera). Tăng tốc khi có line-of-sight lâu.",
+        tips: "Chụp ảnh ghost để thấy headless. Tránh nhìn trực tiếp lâu.",
+        counter: "Loop thông minh, dùng vật cản. Chụp ảnh confirm.",
+        mimic: "Skinwalker có thể mimic headless trong ảnh."
+    },
+    {
+        num: "05",
+        name: "Dybbuk",
+        journal: " linh hồn ác quỷ bị kẹt trong vật thể.",
+        feature: "Bị stun sau khi chơi Music Box lần đầu. Ném xác người chết.",
+        tips: "Music Box stun chỉ lần đầu. Xác chết bị di chuyển.",
+        counter: "Dùng Music Box cẩn thận. Tránh khu vực có xác.",
+        mimic: "Skinwalker mimic Music Box stun."
+    },
+    {
+        num: "06",
+        name: "Entity",
+        journal: "Thực thể lạ lùng, có khả năng dịch chuyển tức thời.",
+        feature: "Teleport giữa các phòng &amp; vật thể (có khói màu).",
+        tips: "Đồ đạc dịch chuyển đột ngột kèm khói. LIDAR quét thấy teleport.",
+        counter: "Đặt salt ở hành lang. Dùng LIDAR theo dõi.",
+        mimic: "Skinwalker mimic teleport."
+    },
+    {
+        num: "07",
+        name: "Ghoul",
+        journal: "Thây ma thèm khát sự chú ý.",
+        feature: "Chat quá nhiều → hunt ngay. Không tương tác với thiết bị điện.",
+        tips: "Ghost không tắt đèn hoặc tương tác điện. Chat nhiều gây hunt.",
+        counter: "Giữ im lặng trong chat. Dễ identify.",
+        mimic: "Skinwalker mimic không tương tác điện."
+    },
+    {
+        num: "08",
+        name: "Keres",
+        journal: "Nữ thần chết chóc, chọn nạn nhân yếu nhất.",
+        feature: "Giảm tốc mỗi kill. Target người có energy thấp nhất.",
+        tips: "Target người energy thấp. Tốc độ giảm dần.",
+        counter: "Giữ energy cao cho toàn team. Dùng Energy Drink.",
+        mimic: "Skinwalker mimic target energy thấp."
+    },
+    {
+        num: "09",
+        name: "Leviathan",
+        journal: "Quái vật biển sâu kiểm soát công nghệ.",
+        feature: "Flicker equipment thường xuyên. Tắt đèn thụ động.",
+        tips: "Thiết bị nhấp nháy liên tục, đèn tắt mà không có ghost.",
+        counter: "Theo dõi đèn &amp; equipment. Mang đèn pin dự phòng.",
+        mimic: "Skinwalker mimic flicker equipment."
+    },
+    {
+        num: "10",
+        name: "Nightmare",
+        journal: "Ác mộng sống, thao túng giác quan.",
+        feature: "Gây ảo giác âm thanh. Sợ phòng sáng.",
+        tips: "Âm thanh lạ không phải ghost thật. Hoạt động yếu ở phòng sáng.",
+        counter: "Giữ nhiều đèn sáng. Cẩn thận sound cues.",
+        mimic: "Skinwalker mimic ảo giác âm thanh."
+    },
+    {
+        num: "11",
+        name: "Oni",
+        journal: "Quỷ dữ mạnh mẽ, thích hiện hình.",
+        feature: "Siêu nhanh trong hunt. Hay gây ghost event và hiện hình.",
+        tips: "Hiện hình thường xuyên. Tốc độ rất cao.",
+        counter: "Tránh loop trực tiếp. Dùng Cross/Holy Oil.",
+        mimic: "Skinwalker mimic hiện hình &amp; tốc độ cao."
+    },
+    {
+        num: "12",
+        name: "Phantom",
+        journal: "Bóng ma mờ ảo, khó nắm bắt.",
+        feature: "Blink chậm hơn (invisible lâu), di chuyển nhanh khi invisible.",
+        tips: "Pattern blink dài. Dùng heartbeat để loop.",
+        counter: "Dựa vào heartbeat để loop.",
+        mimic: "Skinwalker mimic blink pattern."
+    },
+    {
+        num: "13",
+        name: "Ravager",
+        journal: "Kẻ tàn phá, ném mọi thứ.",
+        feature: "Ném nhiều vật cùng lúc. Abilities để EMF 5. Tạo vortex.",
+: "Bóng tối sống, ghét ánh sáng.",
+        feature: "Nhiệt độ giảm ít. Ít hoạt động ở phòng sáng.",
+        tips: "Hoạt động yếu khi sáng. Nhiệt độ không giảm mạnh.",
+        counter: "Giữ đèn sáng tối đa.",
+        mimic: "Skinwalker mimic sợ sáng."
+    },
+    {
+        num: "16",
+        name: "Siren",
+        journal: "Nữ quỷ biển ca hát dụ dỗ.",
+        feature: "Model &amp; giọng nữ. Làm chậm LOS. Humming trong Spirit Box.",
+        tips: "Humming Spirit Box. Làm chậm khi nhìn.",
+        counter: "Tránh nhìn trực tiếp. Nghe Spirit Box.",
+        mimic: "Skinwalker mimic giọng nữ."
+    },
+    {
+        num: "17",
+        name: "Skinwalker",
+        journal: "Kẻ giả mạo nguy hiểm, sao chép mọi thứ.",
+        feature: "Fake Ghost Orb. Mimic abilities của ghost khác.",
+        tips: "Kiểm tra nhiều evidence. Fake Orb không thật.",
+        counter: "Kiểm tra evidence kỹ. Khó identify nhất.",
+        mimic: "Mimic tất cả ghost khác."
+    },
+    {
+        num: "18",
+        name: "Specter",
+        journal: "Linh hồn bị kẹt trong một khu vực.",
+        feature: "Ném vật thường xuyên. Chỉ ở ghost room (trừ hunt).",
+        tips: "Hoạt động tập trung ở 1 phòng.",
+        counter: "Tập trung kiểm tra ghost room chính.",
+        mimic: "Skinwalker mimic ở 1 phòng."
+    },
+    {
+        num: "19",
+        name: "Spirit",
+        journal: "Linh hồn cơ bản nhưng nguy hiểm.",
+        feature: "Biến lửa nến thành xanh (giảm hiệu quả nến).",
+        tips: "Nến cháy xanh là dấu hiệu Spirit.",
+        counter: "Chú ý màu nến.",
+        mimic: "Skinwalker mimic nến xanh."
+    },
+    {
+        num: "20",
+        name: "Umbra",
+        journal: "Bóng tối im lặng.",
+        feature: "Không có tiếng bước chân. Chậm hơn ở phòng sáng.",
+        tips: "Không nghe footsteps. Hoạt động yếu khi sáng.",
+        counter: "Giữ phòng sáng.",
+        mimic: "Skinwalker mimic không footsteps."
+    },
+    {
+        num: "21",
+        name: "Vesper",
+        journal: "Quái vật dựa hoàn toàn vào âm thanh.",
+        feature: "Dựa hoàn toàn vào âm thanh. Nghe xuyên tường.",
+        tips: "Rất nhạy với tiếng động. Nghe từ xa.",
+        counter: "Di chuyển im lặng, crouch nhiều.",
+        mimic: "Skinwalker mimic âm thanh nhạy."
+    },
+    {
+        num: "22",
+        name: "Vex",
+        journal: "Thực thể xuyên không gian.",
+        feature: "Không hiện trong LIDAR. Đi xuyên tường.",
+        tips: "Không thấy trên LIDAR. Xuyên tường.",
+        counter: "Không tin LIDAR. Dùng salt + loop.",
+        mimic: "Skinwalker mimic xuyên tường."
+    },
+    {
+        num: "23",
+        name: "Wendigo",
+        journal: "Quái vật tuyết đói khát năng lượng.",
+        feature: "Ít hunt gần lửa. Tăng tốc khi average energy thấp.",
+        tips: "Tránh lửa → hunt nhiều. Energy thấp = nhanh hơn.",
+        counter: "Giữ energy cao + dùng Candles/Lantern.",
+        mimic: "Skinwalker mimic sợ lửa."
+    },
+    {
+        num: "24",
+        name: "The Wisp",
+        journal: "Ánh sáng ma quái, kiểm soát lửa.",
+        feature: "Xuyên Holy Oil/fire. Chỉ hunt khi player ở favorite room. Có thể thắp nến.",
+        tips: "Hunt chỉ ở favorite room. Thắp nến.",
+        counter: "Tránh favorite room khi nghi hunt.",
+        mimic: "Skinwalker mimic xuyên Holy Oil."
+    },
+    {
+        num: "25",
+        name: "Wraith",
+        journal: "Linh hồn hút năng lượng sống.",
+        feature: "Giảm energy nhanh (0.2-0.4%/giây). Không chạm salt.",
+        tips: "Energy tụt nhanh dù không hunt. Salt không hiệu quả.",
+        counter: "Uống Energy Drink thường xuyên.",
+        mimic: "Skinwalker mimic giảm energy."
+    }
+];
+
+const list = document.getElementById('ghostList');
+
+ghosts.forEach((g) => {
+    const card = document.createElement('div');
+    card.className = 'ghost-card';
+    
+    card.innerHTML = `
+        <div class="ghost-header" onclick="toggleCard(this)">
+            <span class="ghost-num">${g.num}</span>
+            <span class="ghost-name">${g.name}</span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="ghost-body">
+            <div class="section">
+                <dt>Nhật Ký (Journal)</dt>
+                <dd>${g.journal}</dd>
+            </div>
+            <div class="section">
+                <dt>Đặc Trưng</dt>
+                <dd>${g.feature}</dd>
+            </div>
+            <div class="section">
+                <dt>Mẹo Xác Định</dt>
+                <dd>${g.tips}</dd>
+            </div>
+            <div class="section">
+                <dt>Cách Đối Phó</dt>
+                <dd>${g.counter}</dd>
+            </div>
+            <div class="section">
+                <dt>Skinwalker Mimic</dt>
+                <dd>${g.mimic}</dd>
+            </div>
+        </div>
+    `;
+    
+    list.appendChild(card);
+});
+
+function toggleCard(header) {
+    const body = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+    const isOpen = body.classList.toggle('open');
+    icon.style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+</script>
+
+</body>
+</html>
