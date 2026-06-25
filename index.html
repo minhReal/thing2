@@ -89,9 +89,14 @@
         .msg.ai .msg-bubble { background: #1a2a1a; border: 1px solid var(--ai-border); color: #cce8cc; }
         .msg.user .msg-bubble { background: #1e1e1e; border: 1px solid #333; color: var(--text); }
 
-        /* HIGHLIGHT TAGS */
+        /* HIGHLIGHT TAGS — AI chat */
         .tag-ghost { color: #f0c060; font-weight: 600; }
         .tag-warn  { color: #ff6060; font-weight: 600; }
+
+        /* INLINE FORMATTING — ghost cards */
+        .g  { color: #f0c060; font-weight: 600; }
+        .r  { color: #ff6060; font-weight: 600; }
+        .section dd u { text-decoration: underline; text-underline-offset: 3px; }
 
         .ai-hints-wrap {
             border-top: 1px solid var(--ai-border); overflow: hidden;
@@ -159,6 +164,37 @@
         .section dd { color: #ccc; font-size: 0.875rem; padding-left: 14px; position: relative; }
         .section dd::before { content: "•"; color: var(--accent); position: absolute; left: 0; }
         .highlight { color: var(--highlight); font-weight: 600; }
+        .r { color: #ff5555; font-weight: 600; }   /* đỏ: nguy hiểm, hunt */
+        .g { color: #f0c060; font-weight: 600; }   /* vàng: cơ chế đặc trưng */
+        .b { color: #6ab4d4; font-weight: 600; }   /* xanh lam: công cụ/item */
+        .p { color: #b07ed4; font-weight: 600; }   /* tím: evidence/xác nhận */
+
+        /* DETAIL TOGGLE — fixed floating */
+        .header-buttons { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .detail-toggle {
+            position: fixed; bottom: 24px; right: 24px; z-index: 50;
+            display: flex; align-items: center; gap: 8px;
+            background: #1a1a1a; border: 1px solid #333;
+            color: var(--muted); padding: 10px 16px; border-radius: 99px;
+            cursor: pointer; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem; transition: border-color 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .detail-toggle:hover { border-color: #555; box-shadow: 0 4px 24px rgba(0,0,0,0.7); }
+        .detail-toggle.on { border-color: var(--accent); color: var(--accent); }
+        .pill {
+            width: 30px; height: 16px; border-radius: 99px;
+            background: #333; position: relative;
+            transition: background 0.2s; flex-shrink: 0;
+        }
+        .pill::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #666; transition: transform 0.2s, background 0.2s;
+        }
+        .detail-toggle.on .pill { background: rgba(200,169,126,0.25); }
+        .detail-toggle.on .pill::after { transform: translateX(14px); background: var(--accent); }
 
         .note-block {
             max-width: 800px; margin: 32px auto 0; background: var(--surface);
@@ -194,6 +230,10 @@
         Xác định ma
     </button>
 </header>
+
+<button class="detail-toggle" id="detailToggle" onclick="toggleDetail()">
+    Chi tiết <div class="pill"></div>
+</button>
 
 <div class="ai-overlay" id="aiOverlay" onclick="handleOverlayClick(event)">
     <div class="ai-panel" id="aiPanel">
@@ -256,34 +296,252 @@
 
 <script>
 const ghosts = [
-    { num:"01", name:"Aswang", journal:"Một thực thể săn mồi cổ xưa, càng giết càng trở nên mạnh mẽ và hung hãn.", feature:"Tăng tốc <span class='highlight'>20%</span> mỗi kill (unique). Salt làm chậm đáng kể.", tips:"Theo dõi tốc độ ghost tăng dần sau mỗi lần chết. Dùng Photo Camera để kiểm tra.", counter:"Rải salt dày đặc ở hành lang và ghost room. Loop rộng, tránh bị kill liên tục.", mimic:"Skinwalker có thể mimic tăng tốc khi kill." },
-    { num:"02", name:"Banshee", journal:"Tiếng kêu thảm thiết của Banshee báo trước cái chết.", feature:"Phá nhiều cửa sổ/gương cùng lúc. Có tiếng kêu wail đặc biệt lúc hunt.", tips:"Nghe tiếng kêu wail để nhận biết sớm. Kiểm tra cửa sổ vỡ nhiều.", counter:"Tránh đứng gần kính và cửa sổ. Hide tốt khi nghe tiếng kêu.", mimic:"Skinwalker có thể mimic phá kính." },
-    { num:"03", name:"Demon", journal:"CẢNH BÁO CỰC KỲ NGUY HIỂM. DEMON HUNT RẤT THƯỜNG XUYÊN.", feature:"Hunt rất thường xuyên (threshold ~<span class='highlight'>85%</span> energy). Cross float và spin khi burn.", tips:"Cross float + spin là dấu hiệu chắc chắn. Hunt chain liên tục.", counter:"Mang nhiều Crucifix, đặt cách xa nhau. Chuẩn bị safe spot tốt.", mimic:"Skinwalker mimic được behavior Crucifix." },
-    { num:"04", name:"Dullahan", journal:"Kỵ sĩ không đầu, mang theo cái chết.", feature:"Headless trong ảnh chụp (Photo Camera). Tăng tốc khi có line-of-sight lâu.", tips:"Chụp ảnh ghost để thấy headless. Tránh nhìn trực tiếp lâu.", counter:"Loop thông minh, dùng vật cản. Chụp ảnh để confirm.", mimic:"Skinwalker có thể mimic headless trong ảnh." },
-    { num:"05", name:"Dybbuk", journal:"Linh hồn ác quỷ bị kẹt trong vật thể.", feature:"Bị stun sau khi chơi Music Box lần đầu. Ném xác người chết.", tips:"Music Box stun chỉ hiệu quả lần đầu. Xác chết bị di chuyển.", counter:"Dùng Music Box cẩn thận. Tránh khu vực có xác chết.", mimic:"Skinwalker mimic Music Box stun." },
-    { num:"06", name:"Entity", journal:"Thực thể lạ lùng, có khả năng dịch chuyển tức thời.", feature:"Teleport giữa các phòng &amp; vật thể (có khói màu).", tips:"Đồ đạc dịch chuyển đột ngột kèm khói. LIDAR quét thấy vị trí teleport.", counter:"Đặt salt ở hành lang. Dùng LIDAR theo dõi.", mimic:"Skinwalker mimic teleport." },
-    { num:"07", name:"Ghoul", journal:"Thây ma thèm khát sự chú ý.", feature:"Chat quá nhiều → hunt ngay. Không tương tác với thiết bị điện.", tips:"Ghost không tắt đèn hoặc tương tác điện. Chat nhiều sẽ gây hunt.", counter:"Giữ im lặng trong chat. Dễ identify.", mimic:"Skinwalker mimic không tương tác điện." },
-    { num:"08", name:"Keres", journal:"Nữ thần chết chóc, chọn nạn nhân yếu nhất.", feature:"Giảm tốc mỗi kill. Target người có energy thấp nhất trong team.", tips:"Target người energy thấp. Tốc độ giảm dần theo số kill.", counter:"Giữ energy cao cho toàn team. Dùng Energy Drink thường xuyên.", mimic:"Skinwalker mimic target energy thấp." },
-    { num:"09", name:"Leviathan", journal:"Quái vật biển sâu kiểm soát công nghệ.", feature:"Flicker equipment thường xuyên. Tắt đèn một cách thụ động.", tips:"Thiết bị nhấp nháy liên tục, đèn tắt mà không có ghost rõ ràng.", counter:"Theo dõi đèn &amp; equipment. Mang đèn pin dự phòng.", mimic:"Skinwalker mimic flicker equipment." },
-    { num:"10", name:"Nightmare", journal:"Ác mộng sống động, thao túng giác quan.", feature:"Gây ảo giác âm thanh. Sợ phòng sáng.", tips:"Âm thanh lạ không phải từ ghost thật. Hoạt động yếu ở phòng sáng.", counter:"Giữ nhiều đèn sáng. Cẩn thận với sound cues.", mimic:"Skinwalker mimic ảo giác âm thanh." },
-    { num:"11", name:"Oni", journal:"Quỷ dữ mạnh mẽ, thích hiện hình.", feature:"Siêu nhanh trong hunt. Hay gây ghost event và hiện hình thường xuyên.", tips:"Hiện hình rất thường xuyên. Tốc độ hunt rất cao.", counter:"Tránh loop trực tiếp. Dùng Cross/Holy Oil.", mimic:"Skinwalker mimic hiện hình &amp; tốc độ cao." },
-    { num:"12", name:"Phantom", journal:"Bóng ma mờ ảo, khó nắm bắt.", feature:"Blink chậm hơn (invisible lâu hơn), di chuyển nhanh khi invisible.", tips:"Pattern blink dài hơn thông thường. Dùng heartbeat để loop.", counter:"Dựa vào heartbeat để loop an toàn.", mimic:"Skinwalker mimic blink pattern." },
-    { num:"13", name:"Ravager", journal:"Kẻ tàn phá, ném mọi thứ trong tầm tay.", feature:"Ném nhiều vật cùng lúc. Abilities để lại EMF 5. Tạo vortex.", tips:"EMF 5 liên tục. Vortex xuất hiện gần ghost room.", counter:"Tránh khu vực nhiều vật thể. Quan sát EMF.", mimic:"Skinwalker mimic ném vật &amp; EMF 5." },
-    { num:"14", name:"Revenant", journal:"Linh hồn báo thù, dừng lại sau một lần giết.", feature:"Cooldown hunt thấp. Dừng hunt sau 1 kill.", tips:"Hunt liên tục nhưng dừng lại sau 1 kill. Cooldown rất ngắn.", counter:"Hy sinh 1 người để cứu cả team nếu cần thiết.", mimic:"Skinwalker mimic dừng sau kill." },
-    { num:"15", name:"Shadow", journal:"Bóng tối sống động, ghét ánh sáng.", feature:"Nhiệt độ giảm rất ít. Ít hoạt động ở phòng sáng.", tips:"Hoạt động yếu khi phòng sáng. Nhiệt độ không giảm mạnh.", counter:"Giữ đèn sáng tối đa trong toàn bộ map.", mimic:"Skinwalker mimic sợ ánh sáng." },
-    { num:"16", name:"Siren", journal:"Nữ quỷ biển ca hát dụ dỗ.", feature:"Model &amp; giọng nữ. Làm chậm người chơi khi nhìn (LOS). Humming trong Spirit Box.", tips:"Nghe humming trong Spirit Box. Làm chậm khi nhìn trực tiếp.", counter:"Tránh nhìn trực tiếp vào ghost. Nghe Spirit Box để confirm.", mimic:"Skinwalker mimic giọng nữ." },
-    { num:"17", name:"Skinwalker", journal:"Kẻ giả mạo nguy hiểm nhất, sao chép mọi thứ.", feature:"Fake Ghost Orb. Mimic abilities của ghost khác trong game.", tips:"Kiểm tra nhiều evidence khác nhau. Fake Orb không phải Orb thật.", counter:"Kiểm tra evidence thật kỹ. Khó identify nhất trong game.", mimic:"Mimic tất cả ghost khác." },
-    { num:"18", name:"Specter", journal:"Linh hồn bị kẹt mãi mãi trong một khu vực.", feature:"Ném vật thể thường xuyên. Chỉ ở ghost room (trừ khi hunt).", tips:"Hoạt động tập trung ở 1 phòng duy nhất.", counter:"Tập trung kiểm tra ghost room chính.", mimic:"Skinwalker mimic ở 1 phòng." },
-    { num:"19", name:"Spirit", journal:"Linh hồn cơ bản nhưng vẫn nguy hiểm.", feature:"Biến lửa nến thành màu xanh (giảm hiệu quả nến).", tips:"Nến cháy màu xanh là dấu hiệu rõ ràng nhất của Spirit.", counter:"Chú ý màu lửa nến trong ghost room.", mimic:"Skinwalker mimic nến xanh." },
-    { num:"20", name:"Umbra", journal:"Bóng tối im lặng tuyệt đối.", feature:"Không có tiếng bước chân. Chậm hơn ở phòng sáng.", tips:"Hoàn toàn không nghe footsteps. Hoạt động yếu khi sáng.", counter:"Giữ phòng sáng để làm chậm ghost.", mimic:"Skinwalker mimic không có footsteps." },
-    { num:"21", name:"Vesper", journal:"Quái vật dựa hoàn toàn vào âm thanh để săn mồi.", feature:"Dựa hoàn toàn vào âm thanh. Nghe được xuyên tường.", tips:"Rất nhạy cảm với tiếng động. Có thể nghe thấy từ rất xa.", counter:"Di chuyển thật im lặng, crouch liên tục.", mimic:"Skinwalker mimic nhạy âm thanh." },
-    { num:"22", name:"Vex", journal:"Thực thể xuyên không gian, vô hình với thiết bị.", feature:"Không hiện trong LIDAR. Đi xuyên tường tự do.", tips:"Hoàn toàn không thấy trên LIDAR. Có thể xuất hiện xuyên tường.", counter:"Không tin tưởng LIDAR. Dùng salt + loop để đối phó.", mimic:"Skinwalker mimic xuyên tường." },
-    { num:"23", name:"Wendigo", journal:"Quái vật tuyết đói khát năng lượng sống.", feature:"Ít hunt gần lửa. Tăng tốc khi average energy của team thấp.", tips:"Tránh lửa thì hunt nhiều hơn. Energy thấp = ghost nhanh hơn.", counter:"Giữ energy cao + dùng Candles/Lantern gần ghost room.", mimic:"Skinwalker mimic sợ lửa." },
-    { num:"24", name:"The Wisp", journal:"Ánh sáng ma quái, kiểm soát ngọn lửa.", feature:"Xuyên Holy Oil/fire. Chỉ hunt khi player ở favorite room. Có thể tự thắp nến.", tips:"Hunt chỉ xảy ra ở favorite room. Tự thắp nến là dấu hiệu đặc trưng.", counter:"Tránh favorite room khi nghi ngờ ghost sắp hunt.", mimic:"Skinwalker mimic xuyên Holy Oil." },
-    { num:"25", name:"Wraith", journal:"Linh hồn hút cạn năng lượng sống của nạn nhân.", feature:"Giảm energy nhanh (0.2–0.4%/giây). Không chạm salt.", tips:"Energy tụt nhanh dù ghost không hunt. Salt hoàn toàn không hiệu quả.", counter:"Uống Energy Drink thường xuyên. Không đặt salt để bẫy.", mimic:"Skinwalker mimic giảm energy." }
+    {
+        num:"01", name:"Aswang",
+        journal:"Thực thể săn mồi cổ xưa từ folklore Philippines. Cơ thể nó <u>hấp thụ mỗi sinh mệnh cướp đi</u>, tích lũy sức mạnh không giới hạn.",
+        feature:"<span class='r'>Tăng tốc độ 20% sau mỗi lần kill</span> — không giới hạn số lần. <span class='g'>Salt</span> làm chậm đáng kể nhưng không dừng hoàn toàn. Sau 3+ kill, tốc độ gần như không thể loop bình thường.",
+        tips:"Theo dõi <u>tốc độ hunt tăng dần</u> qua từng lần. Nếu lần 2 nhanh hơn lần 1 rõ rệt → Aswang. Dùng <span class='g'>Photo Camera</span> chụp ảnh để xem thêm evidence. <span class='r'>Cực nguy hiểm ở late game</span> khi đã tích lũy nhiều kill.",
+        counter:"Rải <span class='g'>Salt</span> dày đặc ở hành lang chính và ghost room để làm chậm. Loop đường <u>dài và rộng</u>, tránh dead end. Ưu tiên hide hơn loop nếu ghost đã có 3+ kill.",
+        mimic:"Skinwalker có thể mimic cơ chế tăng tốc — kiểm tra thêm evidence khác để phân biệt."
+    },
+    {
+        num:"02", name:"Banshee",
+        journal:"Linh hồn nữ trong folklore Ireland và Scotland, tiếng khóc của cô báo trước cái chết sắp đến.",
+        feature:"<span class='r'>Tiếng kêu wail đặc trưng</span> vang lên lúc bắt đầu hunt — khác hoàn toàn với tiếng bước chân thông thường. <u>Phá nhiều cửa sổ và gương cùng lúc</u> trong một event duy nhất, đây là dấu hiệu dễ thấy nhất.",
+        tips:"Nghe kỹ âm thanh khi hunt bắt đầu — tiếng wail <u>kéo dài và cao</u> là Banshee. Đếm số <span class='g'>cửa sổ/gương vỡ</span>: nếu nhiều hơn 2 vỡ cùng lúc → nghi ngờ cao. Không nhầm với Ravager (Ravager ném vật, không phá kính hàng loạt).",
+        counter:"Tránh đứng gần <span class='r'>kính và cửa sổ</span> — mảnh vỡ gây damage. Khi nghe wail, <u>hide ngay lập tức</u>, không cố loop. Đặt <span class='g'>Cross</span> ở cửa ra vào để mua thêm thời gian.",
+        mimic:"Skinwalker có thể tạo tiếng kêu tương tự — kiểm tra pattern phá kính có đồng đều không."
+    },
+    {
+        num:"03", name:"Demon",
+        journal:"<span class='r'>CẢNH BÁO: Đây là ghost nguy hiểm nhất về tần suất hunt.</span> Thực thể từ cõi địa ngục, không cần lý do để tấn công.",
+        feature:"<u>Hunt khi energy còn ~85%</u> — sớm hơn mọi ghost khác. <span class='r'>Chain hunt liên tục</span> không có cooldown đủ dài để thoát. <span class='g'>Crucifix/Cross float và spin</span> khi bị đốt — đây là <u>dấu hiệu chắc chắn 100%</u>.",
+        tips:"Đặt <span class='g'>Cross</span> xuống và quan sát: nếu nó <u>nổi lên và xoay</u> → Demon chắc chắn. Hunt chain có thể xảy ra ngay sau khi hunt vừa kết thúc — <span class='r'>không được chủ quan</span>. Energy 85% đã trigger hunt trong khi ghost khác cần 50–60%.",
+        counter:"Mang <span class='g'>ít nhất 3 Crucifix</span>, đặt cách nhau 5+ bước. Chuẩn bị <u>safe spot chắc chắn</u> trước khi investigate. <span class='r'>Không bao giờ ở một mình</span> với Demon. Ưu tiên hide hoàn toàn hơn loop.",
+        mimic:"Skinwalker có thể mimic behavior Cross — nhưng cross spin là rất đặc trưng, khó fake hoàn hảo."
+    },
+    {
+        num:"04", name:"Dullahan",
+        journal:"Kỵ sĩ không đầu trong folklore Ireland, cưỡi ngựa đen mang theo cái chết đến bất cứ nơi nào nó dừng lại.",
+        feature:"<u>Đầu bị ẩn hoàn toàn trong ảnh chụp</u> bằng Photo Camera — dấu hiệu xác nhận duy nhất. <span class='r'>Tăng tốc mạnh khi có Line-of-Sight kéo dài</span>: nhìn thẳng vào ghost &gt;2 giây khiến nó sprint. Tốc độ bình thường ở mức trung bình.",
+        tips:"Chụp <span class='g'>Photo Camera</span> vào ghost — nếu không thấy đầu trong ảnh → xác nhận Dullahan. <u>Tránh nhìn trực tiếp</u> quá 2 giây trong lúc hunt. Dùng góc khuất, corner, để phá LOS liên tục khi loop.",
+        counter:"Loop bằng cách <u>liên tục đổi hướng</u> quanh góc tường — phá LOS mỗi 1–2 giây. Dùng <span class='g'>vật cản lớn</span> (bàn, tủ) để chắn tầm nhìn. <span class='r'>Không chạy thẳng</span> — ghost sẽ sprint đuổi kịp.",
+        mimic:"Skinwalker có thể ẩn đầu trong ảnh — nhưng cơ chế tăng tốc LOS là rất đặc trưng."
+    },
+    {
+        num:"05", name:"Dybbuk",
+        journal:"Linh hồn ác quỷ trong truyền thống Do Thái, bám víu vào thế giới người sống thông qua vật thể và xác chết.",
+        feature:"<span class='r'>Bị stun hoàn toàn</span> sau khi nghe <span class='g'>Music Box</span> lần đầu tiên — chỉ lần đầu có hiệu lực, các lần sau không stun nữa. <u>Ném xác người đã chết</u> ra khỏi vị trí ban đầu — dấu hiệu nhận biết độc đáo.",
+        tips:"Dùng <span class='g'>Music Box</span> một lần để test stun — nếu ghost đứng yên &gt;3 giây → Dybbuk. Kiểm tra <u>xác đồng đội có bị di chuyển</u> không so với vị trí ban đầu. Lần 2 trở đi Music Box không có tác dụng stun.",
+        counter:"Dùng Music Box stun để <u>thoát hoặc hide</u> trong thời gian ghost đứng im. <span class='r'>Không đứng gần xác chết</span> — ghost có thể sử dụng xác để gây damage. Sau lần đầu, bỏ Music Box và chuyển sang Cross.",
+        mimic:"Skinwalker mimic stun nhưng xác chết bị ném là dấu hiệu khó fake."
+    },
+    {
+        num:"06", name:"Entity",
+        journal:"Thực thể vô danh không thuộc bất kỳ phân loại nào, tồn tại ngoài quy luật vật lý thông thường.",
+        feature:"<u>Teleport tức thời</u> giữa các phòng và vật thể kèm theo <span class='g'>khói màu nhẹ</span> — khói xuất hiện trong 1–2 giây tại điểm đến. <span class='r'>Đồ vật cũng có thể teleport</span> cùng ghost, gây nhầm lẫn về vị trí ghost room.",
+        tips:"Quan sát <span class='g'>khói màu</span> xuất hiện đột ngột — đó là điểm ghost vừa teleport đến. Dùng <span class='g'>LIDAR</span> quét liên tục để bắt vị trí sau teleport. Đồ vật <u>dịch chuyển đột ngột không có nguyên nhân</u> rõ ràng là dấu hiệu.",
+        counter:"Đặt <span class='g'>Salt</span> ở mọi hành lang vì ghost có thể xuất hiện bất cứ đâu sau teleport. Dùng <span class='g'>LIDAR</span> liên tục để không bị bất ngờ. <span class='r'>Không giả định ghost đang ở phòng cũ</span> sau khi mất dấu.",
+        mimic:"Skinwalker có thể mimic teleport nhưng khó tạo khói màu đặc trưng."
+    },
+    {
+        num:"07", name:"Ghoul",
+        journal:"Thây ma từ folklore Ả Rập, sống bằng cách tiêu thụ người chết và năng lượng từ sự sợ hãi của người sống.",
+        feature:"<span class='r'>Trigger hunt ngay lập tức nếu chat quá nhiều</span> — mỗi tin nhắn trong voice/text chat tăng aggression. <u>Hoàn toàn không tương tác với thiết bị điện</u>: đèn không tự tắt, EMF từ điện không xuất hiện.",
+        tips:"Nếu <u>đèn không bao giờ tự tắt</u> và EMF không flicker → nghi Ghoul ngay. Test bằng cách <span class='r'>nói 1 câu</span> rồi quan sát reaction. Ghost room thường có nhiều hoạt động vật lý nhưng không điện. <span class='g'>EMF Reader</span> sẽ không đọc được mức 4–5 từ điện.",
+        counter:"<u>Tuyệt đối giữ im lặng</u> trong chat khi đang investigate. Thông báo bằng cách gõ phím hoặc ra hiệu. <span class='r'>Không thảo luận chiến thuật bằng giọng nói</span> gần ghost room. Dùng <span class='g'>Cross</span> bình thường.",
+        mimic:"Skinwalker mimic không tương tác điện — nhưng reaction với chat là rất đặc trưng."
+    },
+    {
+        num:"08", name:"Keres",
+        journal:"Nữ thần chết chóc trong thần thoại Hy Lạp, luôn chọn nạn nhân yếu đuối và kiệt sức nhất.",
+        feature:"<u>Luôn target người có energy thấp nhất</u> trong team — nếu bạn có energy thấp, bạn là mục tiêu. <span class='r'>Giảm tốc độ mỗi lần kill</span>: lần đầu nhanh, lần 2 chậm hơn, lần 3 càng chậm hơn nữa — ngược với Aswang.",
+        tips:"Kiểm tra <span class='g'>energy bar</span> của toàn team — người thấp nhất là target. Nếu ghost <u>đổi mục tiêu khi có người dùng Energy Drink</u> → Keres. Tốc độ giảm dần sau mỗi kill là dấu hiệu phân biệt với Aswang.",
+        counter:"Dùng <span class='g'>Energy Drink</span> liên tục để duy trì energy cao cho toàn team. <u>Team cân bằng energy</u> — nếu 1 người thấp hơn nhiều, họ trở thành bait vô tình. <span class='r'>Không để bất kỳ ai có energy dưới 40%</span> khi investigate.",
+        mimic:"Skinwalker có thể fake target energy thấp — xem thêm evidence khác."
+    },
+    {
+        num:"09", name:"Leviathan",
+        journal:"Quái vật biển khổng lồ từ Kinh Thánh, kiểm soát tất cả công nghệ và nguồn điện xung quanh nó.",
+        feature:"<u>Flicker equipment liên tục</u> — đèn pin, EMF Reader, camera đều nhấp nháy mà không cần ghost ở gần. <span class='r'>Tắt đèn phòng một cách thụ động</span> ngay cả khi ghost đang ở phòng khác. Đây là ghost khó nhận biết nhất qua equipment.",
+        tips:"Nếu <span class='g'>đèn pin flicker</span> liên tục mà không thấy ghost → Leviathan. <u>Tắt hết đèn</u> và quan sát xem đèn nào tự tắt bật không theo pattern. <span class='r'>Đừng nhầm với Leviathan khi chỉ thấy flicker thông thường</span> — phải flicker trên diện rộng.",
+        counter:"Luôn mang <span class='g'>đèn pin dự phòng</span> — đèn chính có thể bị tắt bất cứ lúc nào. Theo dõi <u>pattern flicker</u> để dự đoán vị trí ghost. <span class='r'>Không tin tưởng hoàn toàn vào equipment</span> khi investigate Leviathan.",
+        mimic:"Skinwalker mimic flicker — nhưng flicker trên diện rộng đồng thời là khó fake."
+    },
+    {
+        num:"10", name:"Nightmare",
+        journal:"Hiện thân của ác mộng, tồn tại bằng cách nuôi dưỡng nỗi sợ hãi và sự hoang mang của con người.",
+        feature:"<u>Tạo ảo giác âm thanh</u> — tiếng bước chân, tiếng cửa, tiếng gõ đều có thể là giả. <span class='r'>Sợ ánh sáng mạnh</span>: giảm hoạt động đáng kể ở phòng có &gt;3 đèn bật. Hunt ít hơn 40% khi ở phòng sáng.",
+        tips:"<span class='g'>Bật tất cả đèn</span> trong ghost room và hành lang — ghost sẽ yếu đi rõ rệt. <u>Không tin tưởng mọi âm thanh</u>: tiếng bước chân có thể là ảo giác, kiểm tra bằng <span class='g'>LIDAR</span>. Spirit Box và EMF vẫn hoạt động bình thường.",
+        counter:"<u>Giữ ít nhất 4–5 đèn sáng</u> trong khu vực investigate. Dùng <span class='g'>LIDAR</span> để xác nhận vị trí ghost thật thay vì tin âm thanh. <span class='r'>Cẩn thận với sound cue giả</span> — có thể dẫn bạn vào bẫy.",
+        mimic:"Skinwalker mimic ảo giác âm thanh — nhưng reaction với ánh sáng là đặc trưng của Nightmare."
+    },
+    {
+        num:"11", name:"Oni",
+        journal:"Quỷ dữ từ thần thoại Nhật Bản, cực kỳ hung hãn và thích thể hiện sức mạnh bằng cách hiện hình liên tục.",
+        feature:"<u>Tốc độ hunt cao nhất</u> trong game — nhanh hơn cả Aswang ở kill đầu tiên. <span class='r'>Hiện hình ghost event rất thường xuyên</span>: có thể hiện 3–5 lần trong 1 phút. Footstep rõ và nặng hơn ghost thường.",
+        tips:"Nếu ghost <u>hiện hình liên tục</u> và bạn luôn thấy model ghost → Oni. <span class='g'>EMF Reader</span> thường xuyên ở mức 4–5 do event nhiều. <span class='r'>Tốc độ hunt cực cao</span> — loop bình thường sẽ không hiệu quả với Oni.",
+        counter:"<u>Không cố loop Oni</u> — tốc độ quá cao. Ưu tiên hide hoàn toàn ở locker, tủ, dưới gầm. Dùng <span class='g'>Cross</span> và <span class='g'>Holy Oil</span> để mua thêm thời gian. <span class='r'>Chuẩn bị safe spot từ trước</span> khi mới vào map.",
+        mimic:"Skinwalker mimic tốc độ cao và hiện hình thường xuyên — khó phân biệt nếu không có evidence khác."
+    },
+    {
+        num:"12", name:"Phantom",
+        journal:"Bóng ma cổ điển, tồn tại ở ranh giới giữa thế giới người sống và cõi chết, khó nắm bắt và khó nhìn thấy.",
+        feature:"<u>Chu kỳ blink dài hơn</u> bình thường — invisible lâu hơn 50% so với ghost thông thường. <span class='r'>Di chuyển nhanh hơn khi đang invisible</span>. Blink ra trong thời gian rất ngắn, khiến việc tính toán vị trí rất khó.",
+        tips:"Dùng <span class='g'>Heartbeat Monitor</span> để theo dõi vị trí khi ghost invisible — <u>không dựa vào mắt</u>. Pattern: invisible lâu → blink ngắn → invisible lâu. <span class='r'>Đừng dừng lại</span> khi mất dấu ghost — nó vẫn đang di chuyển.",
+        counter:"Loop dựa hoàn toàn vào <span class='g'>Heartbeat Monitor</span> và âm thanh bước chân. <u>Giữ khoảng cách tối thiểu 5 bước</u> vì ghost nhanh hơn khi invisible. <span class='r'>Không nhìn vào chỗ ghost blink ra</span> — nó sẽ invisible lại ngay.",
+        mimic:"Skinwalker mimic pattern blink — nhưng thời gian invisible quá dài là rất đặc trưng."
+    },
+    {
+        num:"13", name:"Ravager",
+        journal:"Thực thể hủy diệt thuần túy, tồn tại chỉ để ném, phá, và tàn phá mọi thứ trong tầm tay.",
+        feature:"<u>Ném nhiều vật thể cùng lúc</u> — 3–5 vật có thể bay trong 1 event. <span class='r'>Mọi ability đều để lại EMF 5</span>: EMF Reader gần như luôn đỏ trong ghost room. Tạo <span class='g'>vortex</span> — xoáy gió nhìn thấy được xuất hiện gần ghost room.",
+        tips:"<span class='g'>EMF Reader</span> liên tục ở mức 5 là dấu hiệu mạnh nhất. Quan sát <u>vortex xuất hiện</u> — nó trông như xoáy không khí nhỏ. Đồ vật bay nhiều hướng cùng lúc, khác với Specter chỉ ném 1 vật.",
+        counter:"Tránh đứng gần <span class='r'>khu vực nhiều vật thể</span> — nguy cơ bị hit bởi đồ vật đang bay. Dùng <span class='g'>EMF Reader</span> để theo dõi liên tục. <u>Dọn sạch đồ vật</u> ra khỏi khu vực investigate nếu có thể.",
+        mimic:"Skinwalker mimic ném vật và EMF 5 — nhưng vortex là dấu hiệu rất khó fake."
+    },
+    {
+        num:"14", name:"Revenant",
+        journal:"Linh hồn báo thù từ truyền thuyết châu Âu, được hồi sinh bởi mục đích duy nhất là lấy đúng 1 sinh mệnh rồi rút lui.",
+        feature:"<u>Dừng hunt hoàn toàn ngay sau 1 kill</u> — không kill thêm, không tiếp tục đuổi. <span class='r'>Cooldown hunt cực ngắn</span>: có thể bắt đầu hunt lại chỉ sau 10–15 giây. <u>Tốc độ hunt trung bình</u>, không đặc biệt nhanh hay chậm.",
+        tips:"Nếu ghost <u>dừng lại ngay sau khi kill 1 người</u> và không đuổi tiếp → Revenant chắc chắn. Đây là cách duy nhất verify: hy sinh 1 người có chủ đích và quan sát. <span class='r'>Cooldown ngắn</span> nghĩa là hunt tiếp theo đến rất nhanh.",
+        counter:"Trong tình huống khẩn cấp, <u>1 người hy sinh</u> cứu được cả team — ghost sẽ dừng ngay sau đó. Sau kill, <span class='r'>team còn lại cần hide ngay</span> vì hunt mới sắp bắt đầu. Dùng <span class='g'>Cross</span> để trì hoãn.",
+        mimic:"Skinwalker mimic dừng sau kill — nhưng pattern này cần quan sát cẩn thận mới phân biệt."
+    },
+    {
+        num:"15", name:"Shadow",
+        journal:"Bóng tối được nhân cách hóa, ghét ánh sáng và tìm kiếm bóng tối để ẩn náu và tích lũy sức mạnh.",
+        feature:"<u>Nhiệt độ giảm rất ít</u> — Thermometer gần như không thay đổi dù ghost ở gần. <span class='r'>Gần như không hoạt động ở phòng sáng</span>: event, ném vật, EMF đều giảm mạnh khi có &gt;2 đèn. Hunt ít hơn 60% khi sáng.",
+        tips:"<span class='g'>Thermometer</span> không giảm dưới 15°C dù ghost ở ngay cạnh — dấu hiệu quan trọng. <u>Tắt tất cả đèn</u> và quan sát hoạt động tăng lên — nếu tăng rõ rệt → Shadow. Khó detect vì ít hoạt động khi người chơi hay bật đèn.",
+        counter:"<u>Bật tất cả đèn</u> trong map — ghost sẽ gần như ngừng hoạt động. <span class='g'>Đèn trang trí nhỏ</span> đặt khắp nơi cũng có tác dụng. <span class='r'>Tắt đèn = mời Shadow tấn công</span> — không bao giờ tắt đèn khi investigate.",
+        mimic:"Skinwalker mimic sợ sáng — nhưng nhiệt độ gần không đổi là rất đặc trưng của Shadow."
+    },
+    {
+        num:"16", name:"Siren",
+        journal:"Quái vật biển trong thần thoại Hy Lạp, giọng hát mê hoặc của nó dụ dỗ thuyền viên đến cái chết.",
+        feature:"<u>Model và giọng nói là nữ</u> — dễ nhận biết khi nghe Spirit Box. <span class='g'>Spirit Box humming</span> khi ghost ở gần, khác với response thông thường. <span class='r'>Làm chậm tốc độ di chuyển</span> của player khi có Line-of-Sight: nhìn vào ghost bị slow 30–40%.",
+        tips:"Dùng <span class='g'>Spirit Box</span> và lắng nghe tiếng humming/hát nhẹ — khác với tiếng trả lời thông thường. Nếu bị <u>chậm lại đột ngột</u> khi nhìn vào ghost → Siren. Giọng nữ trong Spirit Box khi hỏi câu hỏi trực tiếp.",
+        counter:"<u>Không nhìn trực tiếp</u> vào ghost khi hunt — bị slow sẽ không thoát được. Loop bằng cách giữ vật cản giữa bạn và ghost. <span class='r'>Đừng dùng Spirit Box khi gần ghost</span> — tiếng humming có thể gây mất tập trung.",
+        mimic:"Skinwalker mimic giọng nữ và slow effect — nhưng Spirit Box humming rất đặc trưng."
+    },
+    {
+        num:"17", name:"Skinwalker",
+        journal:"<span class='r'>NGUY HIỂM NHẤT.</span> Kẻ giả mạo từ folklore người Mỹ bản địa, sao chép mọi thứ nó quan sát được.",
+        feature:"<u>Tạo Ghost Orb giả</u> — Orb xuất hiện nhưng không phải evidence thật. <span class='r'>Mimic abilities của ghost khác</span> trong cùng session, có thể đổi behavior nhiều lần. Evidence <u>không nhất quán và mâu thuẫn</u> nhau.",
+        tips:"Nếu evidence <u>thay đổi giữa các lần check</u> hoặc mâu thuẫn → Skinwalker. Ghost Orb xuất hiện nhưng không có evidence khác khớp → Fake Orb. <span class='r'>Đây là ghost khó identify nhất</span> — cần kiểm tra ít nhất 3 evidence độc lập.",
+        counter:"<span class='g'>Cross kiểm tra mọi behavior nghi ngờ</span>. Không conclude sớm dựa vào 1–2 evidence. <u>So sánh behavior với database</u> (mục này) để tìm mâu thuẫn. <span class='r'>Cẩn thận mọi lúc</span> — Skinwalker có thể copy ghost nguy hiểm.",
+        mimic:"Chính là ghost mimic — không có ghost nào khác fake Skinwalker."
+    },
+    {
+        num:"18", name:"Specter",
+        journal:"Linh hồn bị giam cầm, bị buộc chặt vào một khu vực cụ thể và không thể rời đi, chỉ hunt khi bị xâm phạm.",
+        feature:"<u>Chỉ tồn tại trong ghost room</u> trong suốt phase investigation — không di chuyển sang phòng khác trừ khi hunt. <span class='r'>Ném vật thể rất thường xuyên</span> khi có người trong phòng. Cooldown hunt bình thường.",
+        tips:"Theo dõi xem ghost có <u>bao giờ ra khỏi ghost room không</u> khi không hunt — Specter sẽ luôn ở trong. <span class='g'>Đặt LIDAR</span> ở cửa ghost room để confirm. Đồ vật trong ghost room bị ném liên tục khi bạn ở trong.",
+        counter:"<u>Tập trung toàn bộ investigation</u> vào ghost room chính — không cần tìm ở nơi khác. Đặt <span class='g'>Cross</span> ở cửa ghost room. <span class='r'>Không đứng trong ghost room quá lâu</span> — Specter sẽ ném vật liên tục vào bạn.",
+        mimic:"Skinwalker mimic ở 1 phòng — nhưng tần suất ném vật cao của Specter là đặc trưng."
+    },
+    {
+        num:"19", name:"Spirit",
+        journal:"Linh hồn cơ bản, dạng ghost phổ biến nhất nhưng có một đặc điểm rất dễ nhận biết nếu biết tìm.",
+        feature:"<u>Biến ngọn lửa nến thành màu xanh</u> — lửa nến bình thường màu vàng/cam, Spirit đổi sang xanh lam rõ rệt. <span class='r'>Hiệu quả của Crucifix giảm</span> — Cross cần đặt gần hơn để có tác dụng. Behavior tổng thể khá trung bình.",
+        tips:"<u>Quan sát màu lửa nến</u> trong ghost room: xanh = Spirit, vàng = ghost khác. Đây là dấu hiệu đơn giản và <span class='g'>đáng tin nhất</span>. Đặt <span class='g'>nến</span> trong ghost room ngay từ đầu để có evidence sớm.",
+        counter:"Đặt nhiều <span class='g'>nến</span> trong ghost room để theo dõi. <u>Cross vẫn có tác dụng</u> nhưng cần đặt gần hơn 1–2 bước so với ghost khác. <span class='r'>Đừng bỏ qua màu lửa</span> — đây là evidence duy nhất của Spirit.",
+        mimic:"Skinwalker mimic nến xanh — nhưng nến xanh kết hợp behavior bình thường là rất đặc trưng."
+    },
+    {
+        num:"20", name:"Umbra",
+        journal:"Hiện thân của bóng tối thuần túy, di chuyển im lặng hoàn toàn như một cái bóng, không để lại dấu vết âm thanh.",
+        feature:"<u>Hoàn toàn không tạo tiếng bước chân</u> — không nghe được kể cả khi ghost đang chạy thẳng vào bạn. <span class='r'>Chậm lại đáng kể ở phòng sáng</span>. Đây là ghost nguy hiểm nhất về mặt surprise attack.",
+        tips:"Nếu <u>không nghe tiếng bước chân nào</u> trong suốt session → Umbra hoặc Vesper. Phân biệt với Vesper: Umbra chậm khi sáng, Vesper thì không. Dùng <span class='g'>Heartbeat Monitor</span> thay vì tai để detect hunt.",
+        counter:"<u>Luôn dùng Heartbeat Monitor</u> — không thể dựa vào tai. Giữ phòng sáng để ghost chậm lại. <span class='r'>Không quay lưng với cửa</span> — ghost có thể vào phòng mà không có tiếng báo hiệu. Đặt <span class='g'>Salt</span> ở cửa.",
+        mimic:"Skinwalker mimic không có footstep — nhưng kết hợp với slow khi sáng là đặc trưng Umbra."
+    },
+    {
+        num:"21", name:"Vesper",
+        journal:"Quái vật hoàng hôn, săn mồi hoàn toàn bằng thính giác cực nhạy, có thể nghe thấy mọi tiếng động xuyên qua nhiều bức tường.",
+        feature:"<u>Dựa 100% vào âm thanh để hunt</u> — không thể phát hiện bạn nếu bạn im lặng hoàn toàn. <span class='r'>Nghe được xuyên tường</span> ở khoảng cách lên đến 3–4 phòng. Tiếng bật đèn, đóng cửa, chạy đều trigger hunt ngay.",
+        tips:"Test bằng cách <u>đứng yên hoàn toàn và im lặng</u>: nếu ghost không hunt → Vesper. Tiếng <span class='r'>chạy và mở cửa</span> là trigger mạnh nhất. Crouch di chuyển làm giảm tiếng động đáng kể.",
+        counter:"<u>Crouch toàn bộ thời gian</u> khi investigate. Không đóng cửa mạnh, không chạy, không nói to. <span class='g'>Đi chậm</span> khi tiếp cận ghost room. <span class='r'>Tuyệt đối không chạy khi bị hunt</span> — tiếng chạy sẽ guide ghost đến bạn. Chỉ đi bộ hoặc crouch.",
+        mimic:"Skinwalker mimic nhạy âm thanh — nhưng ghost hoàn toàn không phản ứng khi im lặng là rất đặc trưng."
+    },
+    {
+        num:"22", name:"Vex",
+        journal:"Thực thể xuyên không gian, tồn tại ở chiều không gian khác và chỉ tương tác với thế giới vật lý khi muốn.",
+        feature:"<u>Vô hình hoàn toàn với LIDAR</u> — không xuất hiện trên scanner dù đang đứng ngay trước mặt. <span class='r'>Đi xuyên tường tự do</span> — không bị chặn bởi bất kỳ vật cản vật lý nào. Loop truyền thống hoàn toàn vô dụng.",
+        tips:"Nếu <span class='g'>LIDAR</span> không bao giờ phát hiện ghost dù có hoạt động rõ ràng → Vex. Ghost có thể xuất hiện xuyên qua tường — <u>không tin tưởng vào layout phòng</u>. <span class='r'>Mọi vật cản đều vô dụng</span> với Vex.",
+        counter:"<u>Bỏ hoàn toàn LIDAR</u> khi nghi Vex. Dùng <span class='g'>Salt</span> để track vị trí — Vex vẫn để lại footprint trong Salt dù xuyên tường. <span class='r'>Không ẩn sau tường</span> — ghost sẽ xuyên qua. Tìm locker, tủ kín để hide.",
+        mimic:"Skinwalker mimic xuyên tường — nhưng LIDAR hoàn toàn không detect là rất đặc trưng."
+    },
+    {
+        num:"23", name:"Wendigo",
+        journal:"Quái vật từ folklore người Algonquian, luôn đói khát năng lượng sống và trở nên hung hãn hơn khi con mồi kiệt sức.",
+        feature:"<u>Ít hunt gần nguồn lửa</u> — nến, lantern, torch đều làm giảm aggression rõ rệt. <span class='r'>Tăng tốc hunt khi average energy của team thấp</span>: team &lt;50% energy → ghost nhanh hơn 25–30%.",
+        tips:"Đặt <span class='g'>nến/lantern</span> xung quanh và quan sát ghost có né tránh không. <u>Theo dõi tốc độ ghost</u> khi team dùng Energy Drink — nếu ghost chậm lại khi energy tăng → Wendigo. <span class='r'>Không nhầm với Demon</span>: Demon hunt nhiều, Wendigo hunt nhanh hơn.",
+        counter:"Đặt <span class='g'>Candles và Lantern</span> khắp ghost room và hành lang. <u>Giữ energy toàn team trên 60%</u> bằng Energy Drink liên tục. <span class='r'>Không explore khi energy thấp</span> — Wendigo sẽ cực kỳ nhanh và nguy hiểm.",
+        mimic:"Skinwalker mimic sợ lửa và tốc độ theo energy — nhưng cả hai kết hợp là rất đặc trưng."
+    },
+    {
+        num:"24", name:"The Wisp",
+        journal:"Ánh sáng ma quái từ folklore Bắc Âu, kiểm soát lửa và chỉ tấn công khi lãnh thổ của nó bị xâm phạm.",
+        feature:"<u>Xuyên qua Holy Oil và lửa</u> — không bị ảnh hưởng bởi bất kỳ nguồn lửa nào. <span class='r'>Hunt chỉ khi player ở trong favorite room</span> của nó — rời phòng đó sẽ kết thúc nguy hiểm. <span class='g'>Tự thắp nến</span> trong phòng không có người.",
+        tips:"Xác định <u>favorite room</u> bằng cách quan sát nơi nến tự thắp. Nếu <span class='g'>Holy Oil</span> không có tác dụng gì → The Wisp. <span class='r'>Hunt bắt đầu và kết thúc</span> phụ thuộc vào việc bạn có ở favorite room không.",
+        counter:"<u>Xác định và tránh favorite room</u> khi nghi ghost sắp hunt. Rời khỏi phòng đó ngay khi cảm thấy nguy hiểm. <span class='r'>Đừng đặt Holy Oil</span> — hoàn toàn vô dụng với The Wisp. Dùng <span class='g'>Cross</span> thay thế.",
+        mimic:"Skinwalker mimic xuyên Holy Oil và thắp nến — nhưng hunt chỉ trong 1 phòng là rất đặc trưng."
+    },
+    {
+        num:"25", name:"Wraith",
+        journal:"Linh hồn hút sinh khí, hấp thụ năng lượng sống của nạn nhân từ từ cho đến khi họ kiệt sức hoàn toàn.",
+        feature:"<u>Hút energy liên tục</u> từ xa: 0.2–0.4% mỗi giây dù bạn không làm gì. <span class='r'>Hoàn toàn không bị Salt ảnh hưởng</span> — xuyên qua Salt như không có gì. Energy tụt nhanh ngay cả khi không có hunt.",
+        tips:"Nếu energy tụt <u>nhanh bất thường</u> dù đứng yên và không có gì xảy ra → Wraith. Đặt <span class='g'>Salt line</span> và quan sát ghost có bước qua không — nếu không để lại dấu → <span class='r'>Salt vô dụng = Wraith</span>. Dùng Energy Drink ngay khi energy xuống 70%.",
+        counter:"<u>Uống Energy Drink ngay lập tức</u> khi energy xuống 70% — không chờ đến khi thấp hơn. <span class='r'>Không đặt Salt</span> — vô tác dụng và lãng phí. Dùng <span class='g'>Cross</span> để chặn hunt. <u>Team cần dự trữ nhiều Energy Drink</u> hơn bình thường cho map có Wraith.",
+        mimic:"Skinwalker mimic hút energy — nhưng Salt hoàn toàn không có footprint là dấu hiệu chắc chắn nhất."
+    }
 ];
 
+// Simple mode — ngắn gọn nhưng vẫn highlight từ quan trọng
+const ghostsSimple = [
+    { journal:"Thực thể săn mồi cổ xưa, càng giết càng mạnh.", feature:"<span class='r'>Tăng tốc 20% mỗi kill</span> (unique). <span class='g'>Salt</span> làm chậm đáng kể.", tips:"Theo dõi <u>tốc độ tăng</u> sau mỗi kill. Dùng <span class='g'>Photo Camera</span>.", counter:"Rải <span class='g'>Salt</span> dày ở hành lang. Loop rộng.", mimic:"Skinwalker có thể mimic tăng tốc khi kill." },
+    { journal:"Tiếng kêu của Banshee báo trước cái chết.", feature:"<u>Phá nhiều cửa sổ/gương</u> cùng lúc. Có <span class='r'>tiếng wail</span> lúc hunt.", tips:"Nghe <span class='r'>tiếng wail</span> sớm. Kiểm tra <u>cửa sổ vỡ nhiều</u>.", counter:"Tránh đứng gần <span class='r'>kính</span>. Hide khi nghe wail.", mimic:"Skinwalker có thể mimic phá kính." },
+    { journal:"<span class='r'>CẢNH BÁO: Demon hunt rất thường xuyên.</span>", feature:"Hunt ở ~<span class='r'>85% energy</span>. <span class='g'>Cross</span> <u>float và spin</u> khi burn.", tips:"<span class='g'>Cross</span> <u>float + spin</u> là dấu hiệu chắc chắn. <span class='r'>Hunt chain</span> liên tục.", counter:"Mang nhiều <span class='g'>Crucifix</span>. Chuẩn bị <u>safe spot</u> tốt.", mimic:"Skinwalker mimic behavior Crucifix." },
+    { journal:"Kỵ sĩ không đầu, mang theo cái chết.", feature:"<u>Headless trong ảnh chụp</u>. <span class='r'>Tăng tốc</span> khi có LOS lâu.", tips:"Chụp <span class='g'>Photo Camera</span> để thấy <u>headless</u>. Tránh nhìn trực tiếp lâu.", counter:"Loop liên tục <u>đổi hướng</u>, dùng vật cản.", mimic:"Skinwalker có thể mimic headless trong ảnh." },
+    { journal:"Linh hồn ác quỷ bị kẹt trong vật thể.", feature:"<span class='r'>Stun</span> sau <span class='g'>Music Box</span> lần đầu. <u>Ném xác người chết</u>.", tips:"<span class='g'>Music Box</span> stun <u>chỉ lần đầu</u>. Kiểm tra xác bị dịch chuyển.", counter:"Dùng <span class='g'>Music Box</span> để thoát. Tránh khu vực có xác.", mimic:"Skinwalker mimic Music Box stun." },
+    { journal:"Thực thể có khả năng dịch chuyển tức thời.", feature:"<u>Teleport</u> giữa các phòng và vật thể (<span class='g'>có khói</span>).", tips:"Quan sát <span class='g'>khói màu</span>. <span class='g'>LIDAR</span> phát hiện vị trí teleport.", counter:"Đặt <span class='g'>Salt</span> ở hành lang. Dùng <span class='g'>LIDAR</span> theo dõi.", mimic:"Skinwalker mimic teleport." },
+    { journal:"Thây ma thèm khát sự chú ý.", feature:"<span class='r'>Chat nhiều → hunt ngay.</span> <u>Không tương tác điện.</u>", tips:"Đèn <u>không bị tắt tự động</u>. <span class='r'>Chat nhiều gây hunt.</span>", counter:"<span class='r'>Giữ im lặng</span> hoàn toàn trong chat.", mimic:"Skinwalker mimic không tương tác điện." },
+    { journal:"Nữ thần chết chóc, chọn nạn nhân yếu nhất.", feature:"<span class='r'>Giảm tốc mỗi kill.</span> Target <u>người energy thấp nhất</u>.", tips:"Target người <span class='r'>energy thấp</span>. Tốc độ giảm dần theo kill.", counter:"Giữ energy cao. Dùng <span class='g'>Energy Drink</span> thường xuyên.", mimic:"Skinwalker mimic target energy thấp." },
+    { journal:"Quái vật biển sâu kiểm soát công nghệ.", feature:"<u>Flicker equipment</u> thường xuyên. <span class='r'>Tắt đèn</span> thụ động.", tips:"Equipment <u>nhấp nháy liên tục</u>, đèn tắt không rõ nguyên nhân.", counter:"Mang <span class='g'>đèn pin dự phòng</span>. Theo dõi đèn và equipment.", mimic:"Skinwalker mimic flicker equipment." },
+    { journal:"Ác mộng sống động, thao túng giác quan.", feature:"Gây <span class='r'>ảo giác âm thanh</span>. <u>Sợ phòng sáng.</u>", tips:"Âm thanh lạ có thể là <span class='r'>ảo giác</span>. Hoạt động yếu khi sáng.", counter:"Giữ <span class='g'>nhiều đèn sáng</span>. Cẩn thận sound cue.", mimic:"Skinwalker mimic ảo giác âm thanh." },
+    { journal:"Quỷ dữ mạnh mẽ, thích hiện hình.", feature:"<span class='r'>Siêu nhanh</span> khi hunt. <u>Hiện hình và ghost event rất nhiều.</u>", tips:"<u>Hiện hình thường xuyên.</u> Tốc độ hunt <span class='r'>rất cao</span>.", counter:"<span class='r'>Không loop</span> — ưu tiên hide. Dùng <span class='g'>Cross</span> và <span class='g'>Holy Oil</span>.", mimic:"Skinwalker mimic hiện hình và tốc độ cao." },
+    { journal:"Bóng ma mờ ảo, khó nắm bắt.", feature:"<u>Blink chậm hơn</u> (invisible lâu). <span class='r'>Nhanh hơn khi invisible.</span>", tips:"Dùng <span class='g'>Heartbeat</span> để loop. <u>Blink dài hơn ghost thường.</u>", counter:"Loop dựa vào <span class='g'>Heartbeat Monitor</span>.", mimic:"Skinwalker mimic blink pattern." },
+    { journal:"Kẻ tàn phá, ném mọi thứ trong tầm tay.", feature:"<u>Ném nhiều vật cùng lúc.</u> Abilities để lại <span class='r'>EMF 5</span>. Có <span class='g'>vortex</span>.", tips:"<span class='r'>EMF 5</span> liên tục. <span class='g'>Vortex</span> xuất hiện gần ghost room.", counter:"Tránh khu vực <u>nhiều vật thể</u>. Quan sát <span class='g'>EMF</span>.", mimic:"Skinwalker mimic ném vật và EMF 5." },
+    { journal:"Linh hồn báo thù, dừng lại sau một lần giết.", feature:"Cooldown hunt thấp. <u>Dừng hunt sau 1 kill.</u>", tips:"Hunt <u>dừng ngay sau 1 kill</u>. Cooldown rất ngắn.", counter:"<span class='r'>Hy sinh 1 người</span> để cứu cả team nếu cần.", mimic:"Skinwalker mimic dừng sau kill." },
+    { journal:"Bóng tối sống động, ghét ánh sáng.", feature:"<u>Nhiệt độ giảm rất ít.</u> <span class='r'>Ít hoạt động ở phòng sáng.</span>", tips:"<span class='g'>Thermometer</span> gần không đổi. Hoạt động yếu khi sáng.", counter:"Giữ <span class='g'>đèn sáng</span> tối đa trong toàn bộ map.", mimic:"Skinwalker mimic sợ ánh sáng." },
+    { journal:"Nữ quỷ biển ca hát dụ dỗ.", feature:"Model và <u>giọng nữ</u>. <span class='r'>Làm chậm LOS.</span> Humming <span class='g'>Spirit Box</span>.", tips:"Nghe <u>humming</u> trong <span class='g'>Spirit Box</span>. Bị chậm khi nhìn ghost.", counter:"<span class='r'>Tránh nhìn trực tiếp.</span> Nghe <span class='g'>Spirit Box</span> để confirm.", mimic:"Skinwalker mimic giọng nữ." },
+    { journal:"<span class='r'>Kẻ giả mạo nguy hiểm nhất,</span> sao chép mọi thứ.", feature:"<span class='r'>Fake Ghost Orb.</span> Mimic abilities của ghost khác.", tips:"Evidence <u>không nhất quán</u> → nghi Skinwalker. <span class='r'>Orb có thể giả.</span>", counter:"Kiểm tra <u>nhiều evidence</u>. Không conclude sớm.", mimic:"Mimic tất cả ghost khác." },
+    { journal:"Linh hồn bị kẹt mãi trong một khu vực.", feature:"<u>Chỉ ở ghost room</u> (trừ hunt). Ném vật thường xuyên.", tips:"Ghost <u>không rời phòng</u> khi không hunt. Ném vật nhiều.", counter:"Tập trung investigate <span class='g'>ghost room</span> chính.", mimic:"Skinwalker mimic ở 1 phòng." },
+    { journal:"Linh hồn cơ bản nhưng vẫn nguy hiểm.", feature:"Biến lửa nến thành <span class='g'>màu xanh</span>.", tips:"<u>Nến cháy xanh</u> là dấu hiệu rõ nhất của Spirit.", counter:"Đặt <span class='g'>nến</span> trong ghost room. Chú ý <u>màu lửa</u>.", mimic:"Skinwalker mimic nến xanh." },
+    { journal:"Bóng tối im lặng tuyệt đối.", feature:"<u>Không có tiếng bước chân.</u> <span class='r'>Chậm hơn ở phòng sáng.</span>", tips:"<span class='r'>Không nghe footstep.</span> Yếu hơn khi phòng sáng.", counter:"Dùng <span class='g'>Heartbeat Monitor</span>. Giữ <span class='g'>phòng sáng</span>.", mimic:"Skinwalker mimic không có footstep." },
+    { journal:"Quái vật dựa hoàn toàn vào âm thanh.", feature:"<u>Nghe xuyên tường.</u> <span class='r'>Hunt khi nghe tiếng động.</span>", tips:"<u>Im lặng hoàn toàn</u> thì ghost không hunt. Crouch nhiều.", counter:"Di chuyển im lặng, <span class='g'>crouch</span> liên tục. <span class='r'>Không chạy khi bị hunt.</span>", mimic:"Skinwalker mimic nhạy âm thanh." },
+    { journal:"Thực thể xuyên không gian, vô hình với thiết bị.", feature:"<u>Không hiện trong LIDAR.</u> <span class='r'>Đi xuyên tường</span> tự do.", tips:"<span class='g'>LIDAR</span> <u>không bao giờ detect</u> ghost. Ghost xuất hiện xuyên tường.", counter:"<span class='r'>Không dùng LIDAR.</span> Dùng <span class='g'>Salt</span> + tìm locker để hide.", mimic:"Skinwalker mimic xuyên tường." },
+    { journal:"Quái vật tuyết đói khát năng lượng sống.", feature:"<span class='g'>Ít hunt gần lửa.</span> <span class='r'>Tăng tốc khi energy team thấp.</span>", tips:"<span class='g'>Lửa</span> làm ghost hunt ít hơn. <span class='r'>Energy thấp = ghost nhanh hơn.</span>", counter:"Đặt <span class='g'>nến/lantern</span> khắp nơi. Giữ <u>energy team cao</u>.", mimic:"Skinwalker mimic sợ lửa." },
+    { journal:"Ánh sáng ma quái, kiểm soát lửa.", feature:"<span class='r'>Xuyên Holy Oil/fire.</span> Hunt chỉ khi player ở <u>favorite room</u>.", tips:"Hunt <u>chỉ ở 1 phòng</u>. <span class='g'>Nến tự thắp</span> là dấu hiệu.", counter:"<u>Tránh favorite room.</u> Dùng <span class='g'>Cross</span> thay Holy Oil.", mimic:"Skinwalker mimic xuyên Holy Oil." },
+    { journal:"Linh hồn hút cạn năng lượng sống.", feature:"<span class='r'>Giảm energy nhanh</span> (0.2–0.4%/giây). <u>Không chạm salt.</u>", tips:"<span class='r'>Energy tụt nhanh</span> dù không hunt. <span class='g'>Salt</span> <u>không để lại dấu</u>.", counter:"Uống <span class='g'>Energy Drink</span> liên tục. <span class='r'>Không đặt salt.</span>", mimic:"Skinwalker mimic giảm energy." }
+];
+
+let detailMode = false;
 const list = document.getElementById('ghostList');
+
+function buildCardBody(g, simple) {
+    const d = simple ? ghostsSimple[ghosts.indexOf(g)] : g;
+    return `
+        <div class="ghost-body">
+            <div class="section"><dt>Journal</dt><dd>${d.journal}</dd></div>
+            <div class="section"><dt>Đặc Trưng</dt><dd>${d.feature}</dd></div>
+            <div class="section"><dt>Mẹo Xác Định</dt><dd>${d.tips}</dd></div>
+            <div class="section"><dt>Cách Đối Phó</dt><dd>${d.counter}</dd></div>
+            <div class="section"><dt>Skinwalker Mimic</dt><dd>${d.mimic}</dd></div>
+        </div>`;
+}
+
 ghosts.forEach(g => {
     const card = document.createElement('div');
     card.className = 'ghost-card open';
@@ -292,16 +550,35 @@ ghosts.forEach(g => {
             <span class="ghost-num">${g.num}</span>
             <span class="ghost-name">${g.name}</span>
             <span class="toggle-icon">▼</span>
-        </div>
-        <div class="ghost-body">
-            <div class="section"><dt>Journal</dt><dd>${g.journal}</dd></div>
-            <div class="section"><dt>Đặc Trưng</dt><dd>${g.feature}</dd></div>
-            <div class="section"><dt>Mẹo Xác Định</dt><dd>${g.tips}</dd></div>
-            <div class="section"><dt>Cách Đối Phó</dt><dd>${g.counter}</dd></div>
-            <div class="section"><dt>Skinwalker Mimic</dt><dd>${g.mimic}</dd></div>
-        </div>`;
+        </div>` + buildCardBody(g, true);
     list.appendChild(card);
 });
+
+function toggleDetail() {
+    detailMode = !detailMode;
+    const btn = document.getElementById('detailToggle');
+    btn.classList.toggle('on', detailMode);
+
+    const cards = document.querySelectorAll('.ghost-card');
+    cards.forEach((card, i) => {
+        const wasOpen = card.classList.contains('open');
+        const header = card.querySelector('.ghost-header');
+        const oldBody = card.querySelector('.ghost-body');
+        const newBodyHTML = buildCardBody(ghosts[i], !detailMode);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = newBodyHTML;
+        const newBody = tmp.firstElementChild;
+        card.replaceChild(newBody, oldBody);
+        if (wasOpen) {
+            requestAnimationFrame(() => {
+                newBody.style.maxHeight = newBody.scrollHeight + 'px';
+                newBody.style.opacity = '1';
+                newBody.style.transform = 'translateY(0)';
+                newBody.style.padding = '14px 20px 18px 62px';
+            });
+        }
+    });
+}
 
 function syncOpenGhostHeights() {
     document.querySelectorAll('.ghost-card.open .ghost-body').forEach(body => {
